@@ -7,7 +7,16 @@ export default function Listenings() {
     <div className="listenings-page">
       <div className="page-header">
         <h2 className="page-title">Listening Exercises</h2>
-        <p className="page-subtitle">Select a unit to begin</p>
+        <p className="page-subtitle">
+          <Link to="/" className="listenings-home-link">
+            Welcome page
+          </Link>
+          <span className="page-subtitle__sep" aria-hidden="true">
+            {" "}
+            ·{" "}
+          </span>
+          Select a unit to begin
+        </p>
       </div>
 
       <div className="units-grid" role="list">

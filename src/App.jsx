@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
+import Landing from './pages/Landing';
 import Listenings from './pages/Listenings';
 import Unit from './pages/Unit';
 import AboutBook from './pages/AboutBook';
@@ -8,7 +9,7 @@ import { BOOK_TITLE, SITE_TITLE_SHORT } from './constants/bookMeta';
 import './App.css';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Listenings', match: (p) => p === '/' },
+  { to: '/listenings', label: 'Listenings', match: (p) => p === '/listenings' },
   { to: '/about/book', label: 'About the Book', match: (p) => p === '/about/book' },
   { to: '/about/author', label: 'About the Author', match: (p) => p === '/about/author' },
 ];
@@ -132,7 +133,8 @@ function App() {
 
       <main className="main-content" role="main">
         <Routes>
-          <Route path="/" element={<Listenings />} />
+          <Route path="/" element={<Landing />} />
+          <Route path="/listenings" element={<Listenings />} />
           <Route path="/unit/:unitId" element={<Unit />} />
           <Route path="/about" element={<Navigate to="/about/book" replace />} />
           <Route path="/about/book" element={<AboutBook />} />

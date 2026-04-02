@@ -76,7 +76,7 @@ export default function AboutBook() {
         </aside>
 
         <footer className="about-footer-nav">
-          <Link to="/" className="about-footer-nav__link about-footer-nav__link--secondary">
+          <Link to="/listenings" className="about-footer-nav__link about-footer-nav__link--secondary">
             ← Listening exercises
           </Link>
           <Link to="/about/author" className="about-footer-nav__link">

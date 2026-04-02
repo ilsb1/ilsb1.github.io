@@ -20,7 +20,7 @@ export default function Unit() {
       <div className="unit-page">
         <div className="error-state">
           <h2>Unit not found</h2>
-          <Link to="/" className="btn-primary">← Back to Listenings</Link>
+          <Link to="/listenings" className="btn-primary">← Back to Listenings</Link>
         </div>
       </div>
     );
@@ -28,7 +28,7 @@ export default function Unit() {
 
   return (
     <div className="unit-page">
-      <Link to="/" className="back-link" aria-label="Back to listenings">
+      <Link to="/listenings" className="back-link" aria-label="Back to listenings">
         ← Back to Listenings
       </Link>
       
