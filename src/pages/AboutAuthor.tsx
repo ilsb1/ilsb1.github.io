@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { BOOK_TITLE } from "../constants/bookMeta";
+import authorPhoto from "../assets/author.jpg";
 
 const RESEARCH_INTERESTS = [
   "Linguistics",
@@ -29,12 +30,21 @@ export default function AboutAuthor() {
             Associate Professor · Department of English Lexicology · Azerbaijan University of
             Languages
           </p>
+          <div className="author-masthead__media">
+            <div className="author-masthead__photo-wrap">
+              <img
+                src={authorPhoto}
+                alt="Dr. Sevinj Aghahuseyn Hasanova"
+                className="author-masthead__photo"
+              />
+            </div>
+          </div>
           <div className="author-masthead__actions">
             <a
               href="https://scholar.google.com/citations?user=OIcH4IgAAAAJ&hl=ru"
               target="_blank"
               rel="noopener noreferrer"
-              className="scholar-link scholar-link--masthead"
+              className="scholar-link scholar-link--masthead social-link social-link--scholar"
               aria-label="View author's Google Scholar profile"
             >
               <svg
@@ -50,6 +60,25 @@ export default function AboutAuthor() {
                 />
               </svg>
               <span>Google Scholar</span>
+            </a>
+            <a
+              href="#"
+              className="scholar-link scholar-link--masthead social-link social-link--linkedin"
+              aria-label="Author LinkedIn profile link placeholder"
+            >
+              <svg
+                className="scholar-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M4 3.5A1.5 1.5 0 0 1 5.5 2h13A1.5 1.5 0 0 1 20 3.5v17a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 20.5v-17zm3.05 6.55h2.35V18H7.05v-7.95zM8.22 6.1a1.36 1.36 0 1 0 0 2.72 1.36 1.36 0 0 0 0-2.72zM11 10.05h2.26v1.09h.03c.32-.6 1.1-1.24 2.26-1.24 2.41 0 2.85 1.58 2.85 3.64V18h-2.35v-3.78c0-.9-.02-2.05-1.24-2.05-1.25 0-1.44.98-1.44 1.99V18H11v-7.95z"
+                  fill="#0A66C2"
+                />
+              </svg>
+              <span>LinkedIn</span>
             </a>
           </div>
         </header>
