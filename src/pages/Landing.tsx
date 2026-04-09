@@ -30,23 +30,23 @@ export default function Landing() {
                 proverbs in use.  
               </p>
               <p>
-                <strong>1. Audio (Units 1-10):</strong> Open{" "}
+                <strong>1. Audio:</strong> Open{" "}
                 <Link to="/listenings" className="landing-inline-link">
                   Listening recordings
                 </Link>{" "}
-                to access tracks that match the printed QR-code URLs.
+                to access tracks.
                 <br />
-                <strong>2. Book overview:</strong> Visit{" "}
+                <strong>2. Overview:</strong> Visit{" "}
                 <Link to="/about/book" className="landing-inline-link">
                   About the book
                 </Link>{" "}
-                for a full outline of the textbook.
+                for more information.
                 <br />
-                <strong>3. Author profile:</strong> Read{" "}
+                <strong>3. Author:</strong> Read{" "}
                 <Link to="/about/author" className="landing-inline-link">
                   About the author
                 </Link>{" "}
-                for biographical and scholarly context.
+                for biographical context.
               </p>
             </div>
           </div>
