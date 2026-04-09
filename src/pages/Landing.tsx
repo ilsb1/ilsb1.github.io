@@ -30,19 +30,23 @@ export default function Landing() {
                 proverbs in use.  
               </p>
               <p>
-                Access audio via the{" "}
+                <strong>1. Audio (Units 1-10):</strong> Open{" "}
                 <Link to="/listenings" className="landing-inline-link">
-                  listening exercises
+                  Listening recordings
                 </Link>{" "}
-                (Units 1–10; URLs match the printed QR codes). The{" "}
+                to access tracks that match the printed QR-code URLs.
+                <br />
+                <strong>2. Book overview:</strong> Visit{" "}
                 <Link to="/about/book" className="landing-inline-link">
                   About the book
                 </Link>{" "}
-                section outlines the textbook in full;{" "}
+                for a full outline of the textbook.
+                <br />
+                <strong>3. Author profile:</strong> Read{" "}
                 <Link to="/about/author" className="landing-inline-link">
                   About the author
                 </Link>{" "}
-                provides biographical and scholarly context.
+                for biographical and scholarly context.
               </p>
             </div>
           </div>

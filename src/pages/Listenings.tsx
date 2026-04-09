@@ -17,6 +17,18 @@ export default function Listenings() {
           </span>
           Select a unit to begin
         </p>
+        <div className="listenings-download-wrap">
+          <a
+            href="/listenings/listening-tracks-all.zip"
+            className="listenings-download-btn"
+            download="ilsbook-listening-tracks-all.zip"
+          >
+            Download all listening tracks (.zip)
+          </a>
+          <p className="listenings-download-note">
+            For offline use: one ZIP file with all Unit 1-10 listening tracks.
+          </p>
+        </div>
       </div>
 
       <div className="units-grid" role="list">
