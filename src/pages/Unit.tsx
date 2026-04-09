@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useParams } from "react-router-dom";
 import { units } from "../data/listenings";
+import { usePlayer } from "../player/PlayerContext";
 
 const getAssetUrl = (path: string): string => {
   // Vite's BASE_URL already includes trailing slash (e.g., "/")
@@ -14,6 +15,7 @@ export default function Unit() {
   const { unitId } = useParams();
   const unitNum = Number(unitId);
   const tracks = units[unitNum];
+  const { playUnitQueue } = usePlayer();
 
   if (!tracks) {
     return (
@@ -40,22 +42,24 @@ export default function Unit() {
         {tracks.map((t, index) => (
           <div key={t.file} className="track-item" role="listitem">
             <h3 className="track-title">{t.title}</h3>
-            
-            <div className="audio-container">
-              <audio 
-                controls 
-                preload="none" 
-                className="audio-player"
-                aria-label={`Audio player for ${t.title}`}
+
+            <div className="track-actions">
+              <button
+                type="button"
+                className="btn-primary track-play-btn"
+                onClick={() => void playUnitQueue(unitNum, tracks, index)}
+                aria-label={`Play ${t.title} in sticky player`}
               >
-                <source src={getAssetUrl(t.file)} type="audio/mpeg" />
-                Your browser does not support the audio element.
-              </audio>
+                Play in sticky player
+              </button>
+              <p className="track-actions__hint">
+                Keep listening while you browse other pages.
+              </p>
             </div>
 
-            <a 
-              href={getAssetUrl(t.file)} 
-              download 
+            <a
+              href={getAssetUrl(t.file)}
+              download
               className="download-link"
               aria-label={`Download ${t.title}`}
             >

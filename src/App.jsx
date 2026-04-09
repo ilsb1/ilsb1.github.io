@@ -8,6 +8,8 @@ import ScriptUnit from './pages/ScriptUnit';
 import AboutBook from './pages/AboutBook';
 import AboutAuthor from './pages/AboutAuthor';
 import { BOOK_TITLE, SITE_TITLE_SHORT } from './constants/bookMeta';
+import StickyPlayer from './components/StickyPlayer';
+import { PlayerProvider } from './player/PlayerContext';
 import './App.css';
 
 const NAV_ITEMS = [
@@ -68,8 +70,9 @@ function App() {
   };
 
   return (
-    <div className="app">
-      <header className="header" role="banner">
+    <PlayerProvider>
+      <div className="app">
+        <header className="header" role="banner">
         <nav className="nav" aria-label="Main navigation">
           <div className="nav-bar">
             <Link to="/" className="logo-link" aria-label="Home">
@@ -132,25 +135,27 @@ function App() {
             })}
           </div>
         </div>
-      </header>
+        </header>
 
-      <main className="main-content" role="main">
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/listenings" element={<Listenings />} />
-          <Route path="/unit/:unitId" element={<Unit />} />
-          <Route path="/listening-scripts" element={<ListeningScripts />} />
-          <Route path="/scripts/unit/:unitId" element={<ScriptUnit />} />
-          <Route path="/about" element={<Navigate to="/about/book" replace />} />
-          <Route path="/about/book" element={<AboutBook />} />
-          <Route path="/about/author" element={<AboutAuthor />} />
-        </Routes>
-      </main>
+        <main className="main-content" role="main">
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/listenings" element={<Listenings />} />
+            <Route path="/unit/:unitId" element={<Unit />} />
+            <Route path="/listening-scripts" element={<ListeningScripts />} />
+            <Route path="/scripts/unit/:unitId" element={<ScriptUnit />} />
+            <Route path="/about" element={<Navigate to="/about/book" replace />} />
+            <Route path="/about/book" element={<AboutBook />} />
+            <Route path="/about/author" element={<AboutAuthor />} />
+          </Routes>
+        </main>
 
-      <footer className="footer" role="contentinfo">
-        <p>&copy; {new Date().getFullYear()} {BOOK_TITLE}</p>
-      </footer>
-    </div>
+        <footer className="footer" role="contentinfo">
+          <p>&copy; {new Date().getFullYear()} {BOOK_TITLE}</p>
+        </footer>
+        <StickyPlayer />
+      </div>
+    </PlayerProvider>
   );
 }
 
