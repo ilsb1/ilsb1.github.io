@@ -724,6 +724,31 @@
   outline-offset: 2px;
 }
 
+.track-script-link {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.65rem;
+  color: var(--british-blue);
+  text-decoration: none;
+  font-weight: 600;
+  border-bottom: 2px solid rgba(1, 33, 105, 0.28);
+  padding-bottom: 0.1rem;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.track-script-link:hover,
+.track-script-link:focus {
+  color: var(--british-light-blue);
+  border-color: var(--british-light-blue);
+  outline: none;
+}
+
+.track-script-link:focus-visible {
+  outline: 2px solid var(--british-blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 .error-state {
   text-align: center;
   padding: 3rem 1rem;
@@ -732,6 +757,146 @@
 .error-state h2 {
   color: var(--british-blue);
   margin-bottom: 1.5rem;
+}
+
+/* Listening Scripts */
+.script-unit-page {
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.script-page-header {
+  margin-bottom: 1.5rem;
+}
+
+.script-title {
+  max-width: 55ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.script-track-links {
+  background: linear-gradient(135deg, rgba(1, 33, 105, 0.05), rgba(1, 33, 105, 0.02));
+  border: 1px solid rgba(1, 33, 105, 0.2);
+  border-radius: 12px;
+  padding: 1rem 1rem 1.1rem;
+  margin-bottom: 1.25rem;
+}
+
+.script-track-links__title {
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--british-blue);
+  margin-bottom: 0.65rem;
+}
+
+.script-track-links__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.script-track-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: var(--british-blue);
+  font-weight: 600;
+  border: 1px solid rgba(1, 33, 105, 0.25);
+  background: var(--british-white);
+  border-radius: 999px;
+  min-height: 2.75rem;
+  padding: 0.45rem 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.script-track-link:hover,
+.script-track-link:focus {
+  color: var(--british-white);
+  background: var(--british-blue);
+  border-color: var(--british-blue);
+  outline: none;
+}
+
+.script-track-link:focus-visible {
+  outline: 2px solid var(--british-blue);
+  outline-offset: 2px;
+}
+
+.script-reader {
+  background: var(--british-white);
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 1.4rem 1.25rem;
+}
+
+.script-block {
+  margin: 0;
+}
+
+.script-block + .script-block,
+.script-block + .script-dialogue,
+.script-dialogue + .script-block,
+.script-dialogue + .script-dialogue {
+  margin-top: 0.85rem;
+}
+
+.script-block--heading {
+  color: var(--british-blue);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  margin-top: 1.15rem;
+}
+
+.script-block--note {
+  color: #334155;
+  border-left: 3px solid rgba(1, 33, 105, 0.5);
+  padding-left: 0.75rem;
+  font-style: italic;
+}
+
+.script-block--paragraph {
+  color: #111827;
+  line-height: 1.82;
+  font-size: 1.06rem;
+  max-width: 74ch;
+}
+
+.script-dialogue {
+  display: grid;
+  grid-template-columns: minmax(132px, 180px) 1fr;
+  gap: 0.85rem;
+  align-items: start;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 10px;
+  background: #fcfdff;
+}
+
+.script-dialogue__speaker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(1, 33, 105, 0.1);
+  color: var(--british-blue);
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-radius: 999px;
+  min-height: 1.9rem;
+  padding: 0 0.7rem;
+}
+
+.script-dialogue__text {
+  margin: 0;
+  color: #0f172a;
+  line-height: 1.75;
+  font-size: 1.03rem;
 }
 
 .btn-primary {
@@ -1084,6 +1249,48 @@
     padding: 1.25rem;
   }
 
+  .script-reader {
+    padding: 1rem;
+  }
+
+  .script-track-links {
+    padding: 0.95rem 0.9rem 1rem;
+  }
+
+  .script-track-link {
+    width: 100%;
+    border-radius: 10px;
+    text-align: center;
+  }
+
+  .script-block--paragraph {
+    max-width: 100%;
+    font-size: 1.02rem;
+    line-height: 1.76;
+  }
+
+  .script-block--heading {
+    font-size: 1rem;
+    margin-top: 1rem;
+  }
+
+  .script-dialogue {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    padding: 0.75rem 0.7rem;
+  }
+
+  .script-dialogue__speaker {
+    justify-self: start;
+    font-size: 0.8rem;
+    min-height: 1.75rem;
+  }
+
+  .script-dialogue__text {
+    font-size: 1rem;
+    line-height: 1.72;
+  }
+
   .about-content {
     padding: 2rem 1.5rem;
   }
@@ -1123,6 +1330,86 @@
   .page-header {
     margin-bottom: 2rem;
   }
+
+  .listening-scripts-page .units-grid {
+    gap: 0.85rem;
+  }
+
+  .listening-scripts-page .unit-card {
+    min-height: 104px;
+    padding: 1rem 0.85rem;
+    border-radius: 10px;
+  }
+
+  .script-unit-page .back-link {
+    width: fit-content;
+    margin-bottom: 1rem;
+  }
+
+  .script-title {
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+
+  .script-track-links {
+    border-radius: 10px;
+    padding: 0.8rem 0.72rem 0.88rem;
+    margin-bottom: 1rem;
+  }
+
+  .script-track-links__title {
+    font-size: 0.82rem;
+    margin-bottom: 0.52rem;
+  }
+
+  .script-track-link {
+    min-height: 2.85rem;
+    font-size: 0.95rem;
+    line-height: 1.35;
+    padding: 0.55rem 0.72rem;
+  }
+
+  .script-reader {
+    border-radius: 10px;
+    padding: 0.85rem 0.72rem;
+  }
+
+  .script-block + .script-block,
+  .script-block + .script-dialogue,
+  .script-dialogue + .script-block,
+  .script-dialogue + .script-dialogue {
+    margin-top: 0.68rem;
+  }
+
+  .script-block--heading {
+    font-size: 0.97rem;
+  }
+
+  .script-block--note {
+    padding-left: 0.58rem;
+    font-size: 0.97rem;
+  }
+
+  .script-block--paragraph {
+    font-size: 0.98rem;
+    line-height: 1.68;
+  }
+
+  .script-dialogue {
+    border-radius: 8px;
+    padding: 0.62rem 0.58rem;
+  }
+
+  .script-dialogue__speaker {
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+    padding: 0 0.58rem;
+  }
+
+  .script-dialogue__text {
+    font-size: 0.97rem;
+    line-height: 1.63;
+  }
 }
 
 /* Accessibility: Reduced Motion */
@@ -1150,11 +1437,38 @@
   .header,
   .footer,
   .back-link,
-  .download-link {
+  .download-link,
+  .script-track-links {
     display: none;
   }
 
   .main-content {
     padding: 0;
+  }
+
+  .script-reader {
+    border: none;
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .script-dialogue {
+    border: none;
+    padding: 0;
+    display: block;
+    margin-top: 0.45rem;
+  }
+
+  .script-dialogue__speaker {
+    background: none;
+    padding: 0;
+    min-height: auto;
+    border-radius: 0;
+    display: inline;
+    margin-right: 0.35rem;
+  }
+
+  .script-dialogue__text {
+    display: inline;
   }
 }

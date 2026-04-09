@@ -61,6 +61,14 @@ export default function Unit() {
             >
               Download MP3
             </a>
+
+            <Link
+              to={`/scripts/unit/${unitNum}`}
+              className="track-script-link"
+              aria-label={`Read the listening script for Unit ${unitNum}`}
+            >
+              Read the full listening script for Unit {unitNum}
+            </Link>
           </div>
         ))}
       </div>

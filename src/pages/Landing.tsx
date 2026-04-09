@@ -36,13 +36,19 @@ export default function Landing() {
                 </Link>{" "}
                 to access tracks.
                 <br />
-                <strong>2. Overview:</strong> Visit{" "}
+                <strong>2. Scripts:</strong> Read{" "}
+                <Link to="/listening-scripts" className="landing-inline-link">
+                  Listening scripts
+                </Link>{" "}
+                with unit-by-unit transcripts.
+                <br />
+                <strong>3. Overview:</strong> Visit{" "}
                 <Link to="/about/book" className="landing-inline-link">
                   About the book
                 </Link>{" "}
                 for more information.
                 <br />
-                <strong>3. Author:</strong> Read{" "}
+                <strong>4. Author:</strong> Read{" "}
                 <Link to="/about/author" className="landing-inline-link">
                   About the author
                 </Link>{" "}

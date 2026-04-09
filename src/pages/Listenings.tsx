@@ -17,6 +17,12 @@ export default function Listenings() {
           </span>
           Select a unit to begin
         </p>
+        <p className="page-subtitle">
+          Looking for text versions?{" "}
+          <Link to="/listening-scripts" className="listenings-home-link">
+            Open Listening Scripts
+          </Link>
+        </p>
         <div className="listenings-download-wrap">
           <a
             href="/listenings/listening-tracks-all.zip"

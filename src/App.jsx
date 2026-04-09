@@ -3,13 +3,16 @@ import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import Landing from './pages/Landing';
 import Listenings from './pages/Listenings';
 import Unit from './pages/Unit';
+import ListeningScripts from './pages/ListeningScripts';
+import ScriptUnit from './pages/ScriptUnit';
 import AboutBook from './pages/AboutBook';
 import AboutAuthor from './pages/AboutAuthor';
 import { BOOK_TITLE, SITE_TITLE_SHORT } from './constants/bookMeta';
 import './App.css';
 
 const NAV_ITEMS = [
-  { to: '/listenings', label: 'Listenings', match: (p) => p === '/listenings' },
+  { to: '/listenings', label: 'Recordings', match: (p) => p === '/listenings' },
+  { to: '/listening-scripts', label: 'Scripts', match: (p) => p === '/listening-scripts' || p.startsWith('/scripts/unit/') },
   { to: '/about/book', label: 'About the Book', match: (p) => p === '/about/book' },
   { to: '/about/author', label: 'About the Author', match: (p) => p === '/about/author' },
 ];
@@ -136,6 +139,8 @@ function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/listenings" element={<Listenings />} />
           <Route path="/unit/:unitId" element={<Unit />} />
+          <Route path="/listening-scripts" element={<ListeningScripts />} />
+          <Route path="/scripts/unit/:unitId" element={<ScriptUnit />} />
           <Route path="/about" element={<Navigate to="/about/book" replace />} />
           <Route path="/about/book" element={<AboutBook />} />
           <Route path="/about/author" element={<AboutAuthor />} />
