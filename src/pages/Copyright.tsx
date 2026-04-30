@@ -2,44 +2,12 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { BOOK_TITLE } from "../constants/bookMeta";
 
-interface CreditEntry {
-  role: string;
-  name: string;
-}
-
-const EDITOR: CreditEntry = {
-  role: "Doctor of Philology, Professor",
-  name: "Dilara A. Ismayilova",
-};
-
-const REVIEWERS: CreditEntry[] = [
-  {
-    role: "Doctor of Philology, Professor",
-    name: "Fikrat F. Jahangirov",
-  },
-  {
-    role: "Ph.D., Associate Professor",
-    name: "Aytan K. Haciyeva",
-  },
-];
-
-const PRODUCTION: CreditEntry[] = [
-  {
-    role: "Book designer",
-    name: "Sevinj A. Hasanova",
-  },
-  {
-    role: "Technical / Web developer",
-    name: "Eldar R. Hasanov",
-  },
-];
-
 export default function Copyright() {
   return (
     <div className="about-page copyright-page">
       <div className="page-header">
         <h2 className="page-title">Copyright</h2>
-        <p className="page-subtitle">Imprint, credits, and rights notice</p>
+        <p className="page-subtitle">Rights notice and imprint</p>
       </div>
 
       <article
@@ -52,38 +20,6 @@ export default function Copyright() {
             Teaching resource &middot; Baku, 2026 &middot; 220 pp.
           </p>
         </header>
-
-        <section className="copyright-credits" aria-label="Credits">
-          <div className="copyright-credits__group">
-            <h4 className="copyright-credits__label">Editor</h4>
-            <p className="copyright-credits__role">{EDITOR.role}</p>
-            <p className="copyright-credits__name">{EDITOR.name}</p>
-          </div>
-
-          <div className="copyright-credits__group">
-            <h4 className="copyright-credits__label">Reviewers</h4>
-            <ul className="copyright-credits__list" role="list">
-              {REVIEWERS.map((person) => (
-                <li key={person.name} className="copyright-credits__item">
-                  <span className="copyright-credits__role">{person.role}</span>
-                  <span className="copyright-credits__name">{person.name}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="copyright-credits__group">
-            <h4 className="copyright-credits__label">Production</h4>
-            <ul className="copyright-credits__list" role="list">
-              {PRODUCTION.map((person) => (
-                <li key={person.name} className="copyright-credits__item">
-                  <span className="copyright-credits__role">{person.role}</span>
-                  <span className="copyright-credits__name">{person.name}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
 
         <section
           className="copyright-notices"
