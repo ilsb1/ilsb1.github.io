@@ -1,7 +1,7 @@
 	LISTENING SCRIPTS UNITS 1-12	
 🎧 Unit 0 Listening Script: A Tourist in Baku
 
-Characters: Mr Spencer (a tourist from London), Aliya, Farida, and Rashid (local students)
+Characters: Mr Spencer (a tourist from London), Aliya, Amina, and Rashid (local students)
 
 Mr Spencer: Excuse me, can you help me, please?
 
@@ -9,7 +9,7 @@ Aliya: Yes, of course.
 
 Mr Spencer: Thank you. My name is David Spencer. I’m from Liverpool, and this is my first time in Baku. I want to visit some famous places, but I’m not sure where to start.
 
-Farida: Welcome to Baku, Mr Spencer! There are many beautiful places to see here.
+Amina: Welcome to Baku, Mr Spencer! There are many beautiful places to see here.
 
 Mr Spencer: That’s good to hear. Can you recommend some places?
 
@@ -21,7 +21,7 @@ Aliya: You can see the Maiden Tower there. It is one of the symbols of Baku. Man
 
 Mr Spencer: Great! Is it far from here?
 
-Farida: No, it isn’t very far. You can go by taxi, bus, or even walk if you like walking.
+Amina: No, it isn’t very far. You can go by taxi, bus, or even walk if you like walking.
 
 Mr Spencer: Wonderful. And what else should I see?
 
@@ -33,7 +33,7 @@ Aliya: Yes, Baku Boulevard is a long and lovely place near the Caspian Sea. Peop
 
 Mr Spencer: That sounds lovely. I really enjoy walking by the sea.
 
-Farida: Then you will like the Boulevard very much. From there, you can also see the Flame Towers. They are modern, tall buildings and look very impressive, especially at night.
+Amina: Then you will like the Boulevard very much. From there, you can also see the Flame Towers. They are modern, tall buildings and look very impressive, especially at night.
 
 Mr Spencer: Ah yes, I saw them from my hotel window. They look amazing.
 
@@ -47,7 +47,7 @@ Aliya: Yes, it is. You can take a taxi quite easily.
 
 Mr Spencer: And Victory Park? Someone at the hotel mentioned it.
 
-Farida: Yes, Victory Park is also worth visiting. It is a nice place to walk and relax, and it is important for the city.
+Amina: Yes, Victory Park is also worth visiting. It is a nice place to walk and relax, and it is important for the city.
 
 Mr Spencer: Thank you very much. You have given me so many good ideas.
 
@@ -57,7 +57,7 @@ Aliya: We hope you enjoy your time in Baku.
 
 Mr Spencer: I’m sure I will. The city already seems very friendly.
 
-Farida: Enjoy your trip!
+Amina: Enjoy your trip!
 
 🎧 UNIt 1 Listening script: ‘MindTalk Radio’
 

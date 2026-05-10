@@ -2,7 +2,7 @@ export type Track = { title: string; file: string };
 
 export const units: Record<number, Track[]> = {
   // New curriculum Unit 1 uses internal ID 0 to preserve legacy QR paths.
-  0: [{ title: "A Tourist in Baku", file: "/listenings/listening0.mp3" }],
+  0: [{ title: "Helping a Tourist in Baku", file: "/listenings/listening0.mp3" }],
   1: [{ title: "MindTalk Radio: Who We Are and Who We Admire", file: "/listenings/listening1.mp3" }],
   2: [{ title: "Academic Success Seminar: Learning Styles & Study Strategies", file: "/listenings/listening2.mp3" }],
   3: [{ title: "Future Tech Café Chat", file: "/listenings/listening3.mp3" }],

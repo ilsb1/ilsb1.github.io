@@ -20,7 +20,7 @@ export type UnitScript = {
 };
 
 const titleFallback: Record<number, string> = {
-  0: "A Tourist in Baku",
+  0: "Helping a Tourist in Baku",
   1: "MindTalk Radio: Who We Are and Who We Admire",
   2: "Academic Success Seminar: Learning Styles and Study Strategies",
   3: "Future Tech Cafe Chat",

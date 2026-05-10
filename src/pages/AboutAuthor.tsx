@@ -100,7 +100,7 @@ export default function AboutAuthor() {
               Dr. Hasanova holds a PhD in Philology (2016) from the Azerbaijan University of
               Languages, where she defended her dissertation entitled &ldquo;The Communicative
               Aspect of Literary Text as a Unit of Culture.&rdquo; She also completed her MA (2006) 
-              and BA (2003) in English Language at the same institution, receiving full state 
+              and BA (2003) in English Language at the same institution, receiving full state merit 
               scholarships and graduating with highest honours in both programmes, with a GPA of 4.0/4.0.
             </p>
           </section>
