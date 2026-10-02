@@ -71,6 +71,11 @@ test("hides codes from unknown emails and shows a preview code locally", async (
     assert.equal(stranger.status, 200);
     assert.equal(stranger.json.previewCode, undefined);
 
+    const lookalike = await desk.call("POST", "/api/auth/request", {
+      body: { email: "sevinjhasanov@yahoo.com" },
+    });
+    assert.equal(lookalike.json.previewCode, undefined);
+
     const author = await desk.call("POST", "/api/auth/request", { body: { email: AUTHOR } });
     assert.equal(author.status, 200);
     assert.match(author.json.previewCode, /^\d{6}$/);
@@ -161,16 +166,16 @@ test("publishes a sanitized piece into the preview folder", async () => {
 test("locks the code after repeated wrong tries", async () => {
   const desk = await setup();
   try {
-    const author = await desk.call("POST", "/api/auth/request", { body: { email: "SevinjHasanov@yahoo.com" } });
+    const author = await desk.call("POST", "/api/auth/request", { body: { email: "SevinjHasanova@yahoo.com" } });
     assert.match(author.json.previewCode, /^\d{6}$/);
     for (let i = 0; i < 4; i += 1) {
       const attempt = await desk.call("POST", "/api/auth/verify", {
-        body: { email: "sevinjhasanov@yahoo.com", code: "111111" },
+        body: { email: "sevinjhasanova@yahoo.com", code: "111111" },
       });
       assert.equal(attempt.json.error, "code_mismatch");
     }
     const locked = await desk.call("POST", "/api/auth/verify", {
-      body: { email: "sevinjhasanov@yahoo.com", code: "111111" },
+      body: { email: "sevinjhasanova@yahoo.com", code: "111111" },
     });
     assert.equal(locked.json.error, "too_many_attempts");
   } finally {

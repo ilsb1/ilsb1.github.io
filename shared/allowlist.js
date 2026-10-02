@@ -1,5 +1,5 @@
 /** Addresses that may request a sign-in code. Checked only on the server. */
-export const ALLOWED_EMAILS = ["sevinjhasanov@yahoo.com", "eldarh079@gmail.com"];
+export const ALLOWED_EMAILS = ["sevinjhasanova@yahoo.com", "eldarh079@gmail.com"];
 
 const ALLOWED = new Set(ALLOWED_EMAILS);
 

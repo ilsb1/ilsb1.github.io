@@ -11,6 +11,7 @@ import Copyright from './pages/Copyright';
 import BlogHome from './pages/BlogHome';
 import BlogArticle from './pages/BlogArticle';
 import WriteDesk from './pages/WriteDesk';
+import { DESK_PATH, useSecretWord, writerSignedIn } from './desk/entrance';
 import { BOOK_TITLE, SITE_TITLE_SHORT } from './constants/bookMeta';
 import StickyPlayer from './components/StickyPlayer';
 import { PlayerProvider } from './player/PlayerContext';
@@ -30,8 +31,11 @@ function App() {
   const location = useLocation();
   const path = location.pathname;
   const readMode = path === '/blog' || path.startsWith('/blog/');
-  const deskMode = path === '/write';
+  const deskMode = path === DESK_PATH;
+  const showDeskLink = !deskMode && writerSignedIn();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  useSecretWord(!deskMode);
 
   const closeMenu = useCallback(() => setMenuOpen(false), []);
   const toggleMenu = useCallback(() => setMenuOpen((o) => !o), []);
@@ -161,7 +165,7 @@ function App() {
             <Route path="/copyright" element={<Copyright />} />
             <Route path="/blog" element={<BlogHome />} />
             <Route path="/blog/:slug" element={<BlogArticle />} />
-            <Route path="/write" element={<WriteDesk />} />
+            <Route path={DESK_PATH} element={<WriteDesk />} />
           </Routes>
         </main>
 
@@ -172,10 +176,14 @@ function App() {
             <Link to="/copyright" className="footer-link">
               Copyright &amp; credits
             </Link>
-            {' · '}
-            <Link to="/write" className="footer-link">
-              Writing desk
-            </Link>
+            {showDeskLink ? (
+              <>
+                {' · '}
+                <Link to={DESK_PATH} className="footer-link">
+                  Writing desk
+                </Link>
+              </>
+            ) : null}
           </p>
         </footer>
         )}
