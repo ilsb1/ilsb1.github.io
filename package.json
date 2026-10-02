@@ -6,7 +6,9 @@
   "homepage": "https://ilsb1.github.io/",
   "scripts": {
     "dev": "vite",
+    "dev:desk": "vite --config vite.desk.config.js",
     "build": "vite build",
+    "build:desk": "vite build --config vite.desk.config.js",
     "lint": "eslint .",
     "test": "node --test shared/*.test.js server/*.test.js",
     "preview": "vite preview"

@@ -4,7 +4,7 @@ import { AUTHOR_NAME, AUTHOR_ROLE, BOOK_TITLE } from "../constants/bookMeta";
 import { formatDate, readingMinutes } from "../../shared/text.js";
 import { loadPublicArticle, loadPublicList, type PublicArticle, type PublicListing } from "../blog/posts";
 import ArticleView, { authorPhoto } from "../components/ArticleView";
-import { IconArrowLeft, IconArrowRight, IconCheck, IconLink, IconShare } from "../desk/icons";
+import { IconArrowLeft, IconArrowRight, IconCheck, IconLink, IconShare } from "../components/icons";
 
 export default function BlogArticle() {
   const { slug = "" } = useParams();
@@ -67,7 +67,6 @@ export default function BlogArticle() {
         html={article.html}
         words={article.words}
         publishedAt={article.publishedAt}
-        previewOnly={article.previewOnly}
         back
       >
         <footer className="post__end">

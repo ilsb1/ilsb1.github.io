@@ -41,17 +41,12 @@
   max-width: calc(48rem + 2.5rem);
 }
 
-.blog--preview {
-  max-width: 44rem;
-  padding: 0;
-}
-
 .blog ::selection {
   background: #fde9b8;
 }
 
 @media (max-width: 640px) {
-  .blog:not(.blog--preview) {
+  .blog {
     padding-top: 2rem;
     padding-bottom: 3rem;
   }
@@ -565,15 +560,6 @@ a.bh-feature:hover .bh-feature__more svg {
 .post__back:hover {
   background: rgba(29, 27, 24, 0.05);
   color: var(--ink);
-}
-
-.post__flag {
-  margin-bottom: 2rem;
-  padding: 0.75rem 1rem;
-  border-radius: 12px;
-  background: #fbf0db;
-  color: #6b4a12;
-  font: 0.875rem/1.5 var(--sans);
 }
 
 .post__header {

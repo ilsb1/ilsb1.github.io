@@ -12,7 +12,6 @@ type Props = {
   html: string;
   words: number;
   publishedAt?: string;
-  previewOnly?: boolean;
   back?: boolean;
   children?: ReactNode;
 };
@@ -23,7 +22,6 @@ export default function ArticleView({
   html,
   words,
   publishedAt,
-  previewOnly = false,
   back = false,
   children,
 }: Props) {
@@ -34,11 +32,6 @@ export default function ArticleView({
         <Link to="/blog" className="post__back">
           <span aria-hidden="true">←</span> All writing
         </Link>
-      ) : null}
-      {previewOnly ? (
-        <p className="post__flag">
-          Preview: this copy is saved on this computer and isn&apos;t on the public website yet.
-        </p>
       ) : null}
       <header className="post__header">
         <p className="post__meta">

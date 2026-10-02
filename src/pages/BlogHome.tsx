@@ -4,7 +4,7 @@ import { AUTHOR_NAME, BOOK_TITLE } from "../constants/bookMeta";
 import { formatDate, readingMinutes } from "../../shared/text.js";
 import { loadPublicList, type PublicListing } from "../blog/posts";
 import { authorPhoto } from "../components/ArticleView";
-import { IconArrowRight, IconPen } from "../desk/icons";
+import { IconArrowRight, IconPen } from "../components/icons";
 
 export default function BlogHome() {
   const [posts, setPosts] = useState<PublicListing[] | null>(null);

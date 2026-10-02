@@ -1,30 +1,28 @@
-export type BlockStyle = "normal" | "heading" | "subheading" | "quote";
-export type SizeName = "small" | "normal" | "large" | "xl";
+export type BlockStyle = "normal" | "heading" | "subheading";
+export type SizeName = "small" | "normal" | "large";
 export type ListKind = "bullets" | "numbers" | null;
 
-export const BLOCK_STYLES: { id: BlockStyle; label: string; hint: string }[] = [
-  { id: "normal", label: "Normal text", hint: "For everyday paragraphs" },
-  { id: "heading", label: "Heading", hint: "Starts a new section" },
-  { id: "subheading", label: "Subheading", hint: "A smaller section title" },
-  { id: "quote", label: "Quote", hint: "Sets a passage apart" },
+export const BLOCK_STYLES: { id: BlockStyle; label: string }[] = [
+  { id: "normal", label: "Normal text" },
+  { id: "heading", label: "Heading" },
+  { id: "subheading", label: "Subheading" },
 ];
 
 export const SIZES: { id: SizeName; label: string }[] = [
   { id: "small", label: "Small" },
   { id: "normal", label: "Normal" },
   { id: "large", label: "Large" },
-  { id: "xl", label: "Extra large" },
 ];
 
-const SIZE_TO_FONT: Record<SizeName, string> = { small: "2", normal: "3", large: "5", xl: "6" };
+const SIZE_TO_FONT: Record<SizeName, string> = { small: "2", normal: "3", large: "5" };
 const FONT_TO_SIZE: Record<string, SizeName> = {
   "1": "small",
   "2": "small",
   "3": "normal",
   "4": "large",
   "5": "large",
-  "6": "xl",
-  "7": "xl",
+  "6": "large",
+  "7": "large",
 };
 const CLASS_TO_FONT: Record<string, string> = { "size-small": "2", "size-large": "5", "size-xl": "6" };
 
@@ -46,7 +44,6 @@ export function closestIn(node: Node | null, selector: string, editor: HTMLEleme
 }
 
 export function blockStyleAt(node: Node | null, editor: HTMLElement): BlockStyle {
-  if (closestIn(node, "blockquote", editor)) return "quote";
   if (closestIn(node, "h2", editor)) return "heading";
   if (closestIn(node, "h3", editor)) return "subheading";
   return "normal";
@@ -57,7 +54,6 @@ export function sizeAt(node: Node | null, editor: HTMLElement): SizeName {
   if (!el) return "normal";
   if (el.tagName === "FONT") return FONT_TO_SIZE[el.getAttribute("size") || "3"] || "normal";
   if (el.classList.contains("size-small")) return "small";
-  if (el.classList.contains("size-xl")) return "xl";
   return "large";
 }
 
@@ -206,25 +202,8 @@ export function applyBlockStyle(editor: HTMLElement, style: BlockStyle) {
   const range = rangeIn(editor);
   const current = range ? blockStyleAt(range.startContainer, editor) : "normal";
   if (current === style) return;
-
-  if (current === "quote") {
-    document.execCommand("formatBlock", false, "p");
-    const after = rangeIn(editor);
-    if (after && closestIn(after.startContainer, "blockquote", editor)) document.execCommand("outdent");
-    if (style === "normal") return;
-  }
-
-  const tag = style === "heading" ? "h2" : style === "subheading" ? "h3" : style === "quote" ? "blockquote" : "p";
+  const tag = style === "heading" ? "h2" : style === "subheading" ? "h3" : "p";
   document.execCommand("formatBlock", false, tag);
-}
-
-export function caretRect(range: Range, editor: HTMLElement): DOMRect | null {
-  const rect = range.getBoundingClientRect();
-  if (rect.width || rect.height) return rect;
-  const rects = range.getClientRects();
-  if (rects.length) return rects[0];
-  const block = closestIn(range.startContainer, "p, h2, h3, li, blockquote", editor);
-  return block ? block.getBoundingClientRect() : null;
 }
 
 export function escapeHtml(value: string) {

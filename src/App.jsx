@@ -10,8 +10,6 @@ import AboutAuthor from './pages/AboutAuthor';
 import Copyright from './pages/Copyright';
 import BlogHome from './pages/BlogHome';
 import BlogArticle from './pages/BlogArticle';
-import WriteDesk from './pages/WriteDesk';
-import { DESK_PATH, useSecretWord, writerSignedIn } from './desk/entrance';
 import { BOOK_TITLE, SITE_TITLE_SHORT } from './constants/bookMeta';
 import StickyPlayer from './components/StickyPlayer';
 import { PlayerProvider } from './player/PlayerContext';
@@ -31,11 +29,7 @@ function App() {
   const location = useLocation();
   const path = location.pathname;
   const readMode = path === '/blog' || path.startsWith('/blog/');
-  const deskMode = path === DESK_PATH;
-  const showDeskLink = !deskMode && writerSignedIn();
   const [menuOpen, setMenuOpen] = useState(false);
-
-  useSecretWord(!deskMode);
 
   const closeMenu = useCallback(() => setMenuOpen(false), []);
   const toggleMenu = useCallback(() => setMenuOpen((o) => !o), []);
@@ -84,8 +78,7 @@ function App() {
 
   return (
     <PlayerProvider>
-      <div className={`app${readMode ? ' app--read' : ''}${deskMode ? ' app--desk' : ''}`}>
-        {deskMode ? null : (
+      <div className={`app${readMode ? ' app--read' : ''}`}>
         <header className="header" role="banner">
         <nav className="nav" aria-label="Main navigation">
           <div className="nav-bar">
@@ -150,7 +143,6 @@ function App() {
           </div>
         </div>
         </header>
-        )}
 
         <main className="main-content" role="main">
           <Routes>
@@ -165,28 +157,17 @@ function App() {
             <Route path="/copyright" element={<Copyright />} />
             <Route path="/blog" element={<BlogHome />} />
             <Route path="/blog/:slug" element={<BlogArticle />} />
-            <Route path={DESK_PATH} element={<WriteDesk />} />
           </Routes>
         </main>
 
-        {deskMode ? null : (
         <footer className="footer" role="contentinfo">
           <p>
             &copy; {new Date().getFullYear()} {BOOK_TITLE} &middot;{' '}
             <Link to="/copyright" className="footer-link">
               Copyright &amp; credits
             </Link>
-            {showDeskLink ? (
-              <>
-                {' · '}
-                <Link to={DESK_PATH} className="footer-link">
-                  Writing desk
-                </Link>
-              </>
-            ) : null}
           </p>
         </footer>
-        )}
         <StickyPlayer />
       </div>
     </PlayerProvider>

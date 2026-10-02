@@ -1,26 +1,24 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
+  "buildCommand": "npm run build:desk",
+  "outputDirectory": "dist-desk",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . ':(exclude)public/blogs'",
   "functions": {
     "api/index.js": { "maxDuration": 30 }
   },
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api" },
-    { "source": "/((?!api/|blogs/|assets/).*)", "destination": "/index.html" }
+    { "source": "/((?!api/|assets/).*)", "destination": "/index.html" }
   ],
   "headers": [
-    {
-      "source": "/blogs/(.*)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
-    },
     {
       "source": "/(.*)",
       "headers": [
         { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
       ]
     }
   ]
