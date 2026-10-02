@@ -59,6 +59,12 @@ export default function Landing() {
                   Copyright &amp; credits
                 </Link>{" "}
                 page for the imprint and rights notice.
+                <br />
+                <strong>6. Blog:</strong> Read{" "}
+                <Link to="/blog" className="landing-inline-link">
+                  the author&apos;s blog
+                </Link>
+                .
               </p>
             </div>
           </div>

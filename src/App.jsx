@@ -8,14 +8,19 @@ import ScriptUnit from './pages/ScriptUnit';
 import AboutBook from './pages/AboutBook';
 import AboutAuthor from './pages/AboutAuthor';
 import Copyright from './pages/Copyright';
+import BlogHome from './pages/BlogHome';
+import BlogArticle from './pages/BlogArticle';
+import WriteDesk from './pages/WriteDesk';
 import { BOOK_TITLE, SITE_TITLE_SHORT } from './constants/bookMeta';
 import StickyPlayer from './components/StickyPlayer';
 import { PlayerProvider } from './player/PlayerContext';
 import './App.css';
+import './blog.css';
 
 const NAV_ITEMS = [
   { to: '/listenings', label: 'Recordings', match: (p) => p === '/listenings' },
   { to: '/listening-scripts', label: 'Scripts', match: (p) => p === '/listening-scripts' || p.startsWith('/scripts/unit/') },
+  { to: '/blog', label: 'Blog', match: (p) => p === '/blog' || p.startsWith('/blog/') },
   { to: '/about/book', label: 'About the Book', match: (p) => p === '/about/book' },
   { to: '/about/author', label: 'About the Author', match: (p) => p === '/about/author' },
   { to: '/copyright', label: 'Copyright', match: (p) => p === '/copyright' },
@@ -24,6 +29,8 @@ const NAV_ITEMS = [
 function App() {
   const location = useLocation();
   const path = location.pathname;
+  const readMode = path === '/blog' || path.startsWith('/blog/');
+  const deskMode = path === '/write';
   const [menuOpen, setMenuOpen] = useState(false);
 
   const closeMenu = useCallback(() => setMenuOpen(false), []);
@@ -73,7 +80,8 @@ function App() {
 
   return (
     <PlayerProvider>
-      <div className="app">
+      <div className={`app${readMode ? ' app--read' : ''}${deskMode ? ' app--desk' : ''}`}>
+        {deskMode ? null : (
         <header className="header" role="banner">
         <nav className="nav" aria-label="Main navigation">
           <div className="nav-bar">
@@ -138,6 +146,7 @@ function App() {
           </div>
         </div>
         </header>
+        )}
 
         <main className="main-content" role="main">
           <Routes>
@@ -150,17 +159,26 @@ function App() {
             <Route path="/about/book" element={<AboutBook />} />
             <Route path="/about/author" element={<AboutAuthor />} />
             <Route path="/copyright" element={<Copyright />} />
+            <Route path="/blog" element={<BlogHome />} />
+            <Route path="/blog/:slug" element={<BlogArticle />} />
+            <Route path="/write" element={<WriteDesk />} />
           </Routes>
         </main>
 
+        {deskMode ? null : (
         <footer className="footer" role="contentinfo">
           <p>
             &copy; {new Date().getFullYear()} {BOOK_TITLE} &middot;{' '}
             <Link to="/copyright" className="footer-link">
               Copyright &amp; credits
             </Link>
+            {' · '}
+            <Link to="/write" className="footer-link">
+              Writing desk
+            </Link>
           </p>
         </footer>
+        )}
         <StickyPlayer />
       </div>
     </PlayerProvider>
