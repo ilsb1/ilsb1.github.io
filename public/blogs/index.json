@@ -1,3 +1,13 @@
 {
-  "posts": []
+  "posts": [
+    {
+      "slug": "setup-check",
+      "title": "Setup check",
+      "subtitle": "A test post that will be removed in a minute",
+      "excerpt": "Checking that publishing from the writing desk reaches the live site.",
+      "words": 11,
+      "publishedAt": "2026-10-02T11:38:08.576Z",
+      "updatedAt": "2026-10-02T11:38:08.576Z"
+    }
+  ]
 }
