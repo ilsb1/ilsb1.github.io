@@ -36,11 +36,15 @@ export function readServerEnv(cwd = process.cwd()) {
   }
   for (const key of [
     "AUTH_SECRET",
-    "RESEND_API_KEY",
-    "MAIL_FROM",
+    "GMAIL_USER",
+    "GMAIL_APP_PASSWORD",
     "GITHUB_TOKEN",
     "GITHUB_REPO",
     "GITHUB_BRANCH",
+    "KV_REST_API_URL",
+    "KV_REST_API_TOKEN",
+    "UPSTASH_REDIS_REST_URL",
+    "UPSTASH_REDIS_REST_TOKEN",
   ]) {
     if (process.env[key]) env[key] = process.env[key];
   }

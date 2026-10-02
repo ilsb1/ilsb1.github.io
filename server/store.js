@@ -11,7 +11,7 @@ import {
   slugify,
   wordCount,
 } from "../shared/text.js";
-import { commitToGithub } from "./github.js";
+import { commitToGithub, githubConfigured } from "./github.js";
 
 const TITLE_MAX = 180;
 const SUBTITLE_MAX = 240;
@@ -44,6 +44,24 @@ async function readPosts(root) {
 
 async function writePosts(root, posts) {
   await writeJson(postsFile(root), { posts });
+}
+
+/** Keeps every piece in server/data/posts.json, for the desk running on this computer. */
+export function createFilePosts(root) {
+  return {
+    all: () => readPosts(root),
+    async put(post) {
+      const posts = await readPosts(root);
+      const index = posts.findIndex((item) => item.id === post.id);
+      if (index === -1) posts.push(post);
+      else posts[index] = post;
+      await writePosts(root, posts);
+    },
+    async remove(id) {
+      const posts = await readPosts(root);
+      await writePosts(root, posts.filter((item) => item.id !== id));
+    },
+  };
 }
 
 export async function loadSecret(root, env) {
@@ -108,22 +126,24 @@ function indexEntry(post) {
   };
 }
 
-async function writePublic(root, posts, { changedSlug = null, removedSlug = null } = {}) {
-  const dir = blogsDir(root);
-  await mkdir(dir, { recursive: true });
+async function writePublic(root, posts, { changedSlug = null, removedSlug = null, writeFiles = true } = {}) {
   const published = posts
     .filter((post) => post.live && isSlug(post.slug))
     .sort((a, b) => Date.parse(b.live.publishedAt) - Date.parse(a.live.publishedAt));
 
   const index = { posts: published.map(indexEntry) };
-  await writeJson(path.join(dir, "index.json"), index);
-
   const slugs = new Set(published.map((post) => post.slug));
-  for (const post of published) {
-    await writeJson(path.join(dir, `${post.slug}.json`), articleJson(post));
-  }
-  if (removedSlug && !slugs.has(removedSlug)) {
-    await rm(path.join(dir, `${removedSlug}.json`), { force: true });
+
+  if (writeFiles) {
+    const dir = blogsDir(root);
+    await mkdir(dir, { recursive: true });
+    await writeJson(path.join(dir, "index.json"), index);
+    for (const post of published) {
+      await writeJson(path.join(dir, `${post.slug}.json`), articleJson(post));
+    }
+    if (removedSlug && !slugs.has(removedSlug)) {
+      await rm(path.join(dir, `${removedSlug}.json`), { force: true });
+    }
   }
 
   const files = [];
@@ -151,41 +171,34 @@ function uniqueSlug(title, posts, selfId) {
   return `${base.slice(0, 56)}-${n}`;
 }
 
+function failure(status, code) {
+  const error = new Error(code);
+  error.status = status;
+  error.code = code;
+  return error;
+}
+
 function cleanInput(body) {
-  if (!body || typeof body !== "object") {
-    const error = new Error("bad_body");
-    error.status = 400;
-    error.code = "bad_body";
-    throw error;
-  }
-  const title = plainField(body.title, TITLE_MAX);
-  const subtitle = plainField(body.subtitle, SUBTITLE_MAX);
-  const html = sanitizeHtml(body.html);
-  if (String(body.html ?? "").length > 200_000) {
-    const error = new Error("too_large");
-    error.status = 413;
-    error.code = "too_large";
-    throw error;
-  }
-  return { title, subtitle, html };
+  if (!body || typeof body !== "object") throw failure(400, "bad_body");
+  if (String(body.html ?? "").length > 200_000) throw failure(413, "too_large");
+  return {
+    title: plainField(body.title, TITLE_MAX),
+    subtitle: plainField(body.subtitle, SUBTITLE_MAX),
+    html: sanitizeHtml(body.html),
+  };
 }
 
 function requireText(cleaned) {
-  if (!cleaned.title) {
-    const error = new Error("title_required");
-    error.status = 400;
-    error.code = "title_required";
-    throw error;
-  }
-  if (!htmlToPlain(cleaned.html)) {
-    const error = new Error("body_required");
-    error.status = 400;
-    error.code = "body_required";
-    throw error;
-  }
+  if (!cleaned.title) throw failure(400, "title_required");
+  if (!htmlToPlain(cleaned.html)) throw failure(400, "body_required");
 }
 
-export function createStore({ root, env, fetchImpl }) {
+/**
+ * `hosted` means a read-only server: nothing is written to disk, and publishing
+ * needs GitHub because the commit is what updates the public blog.
+ */
+export function createStore({ root, env, fetchImpl, posts: db = createFilePosts(root), hosted = false }) {
+  const writeFiles = !hosted;
   let chain = Promise.resolve();
   const lock = (fn) => {
     const run = chain.then(fn, fn);
@@ -196,64 +209,56 @@ export function createStore({ root, env, fetchImpl }) {
     return run;
   };
 
+  function requireGithub() {
+    if (hosted && !githubConfigured(env)) throw failure(503, "publish_not_configured");
+  }
+
+  async function sync(message, posts, options) {
+    const { files, deletions } = await writePublic(root, posts, { ...options, writeFiles });
+    try {
+      return await commitToGithub({ env, fetchImpl, message, files, deletions });
+    } catch (error) {
+      console.error("GitHub commit failed", error.githubStatus || error.code || "error");
+      return "failed";
+    }
+  }
+
   async function list() {
-    const posts = await readPosts(root);
+    const posts = await db.all();
     return posts.map(toClient);
   }
 
   async function save(id, body, now) {
-    if (!isPostId(id)) {
-      const error = new Error("bad_id");
-      error.status = 400;
-      error.code = "bad_id";
-      throw error;
-    }
+    if (!isPostId(id)) throw failure(400, "bad_id");
     const cleaned = cleanInput(body);
-    const posts = await readPosts(root);
-    const index = posts.findIndex((post) => post.id === id);
+    const posts = await db.all();
+    const existing = posts.find((post) => post.id === id);
+    if (!existing && posts.length >= MAX_POSTS) throw failure(400, "too_many");
     const timestamp = new Date(now).toISOString();
-    if (index === -1) {
-      if (posts.length >= MAX_POSTS) {
-        const error = new Error("too_many");
-        error.status = 400;
-        error.code = "too_many";
-        throw error;
-      }
-      posts.push({
-        id,
-        slug: null,
-        title: cleaned.title,
-        subtitle: cleaned.subtitle,
-        html: cleaned.html,
-        createdAt: timestamp,
-        updatedAt: timestamp,
-        live: null,
-      });
-    } else {
-      posts[index] = {
-        ...posts[index],
-        title: cleaned.title,
-        subtitle: cleaned.subtitle,
-        html: cleaned.html,
-        updatedAt: timestamp,
-      };
-    }
-    await writePosts(root, posts);
-    return toClient(posts[index === -1 ? posts.length - 1 : index]);
+    const post = existing
+      ? { ...existing, title: cleaned.title, subtitle: cleaned.subtitle, html: cleaned.html, updatedAt: timestamp }
+      : {
+          id,
+          slug: null,
+          title: cleaned.title,
+          subtitle: cleaned.subtitle,
+          html: cleaned.html,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+          live: null,
+        };
+    await db.put(post);
+    return toClient(post);
   }
 
   async function publish(id, body, now) {
+    requireGithub();
     const cleaned = cleanInput(body);
     requireText(cleaned);
     await save(id, cleaned, now);
-    const posts = await readPosts(root);
+    const posts = await db.all();
     const post = posts.find((item) => item.id === id);
-    if (!post) {
-      const error = new Error("not_found");
-      error.status = 404;
-      error.code = "not_found";
-      throw error;
-    }
+    if (!post) throw failure(404, "not_found");
     const timestamp = new Date(now).toISOString();
     if (!post.slug) post.slug = uniqueSlug(cleaned.title, posts, post.id);
     const publishedAt = post.live?.publishedAt || timestamp;
@@ -268,84 +273,35 @@ export function createStore({ root, env, fetchImpl }) {
       publishedAt,
       updatedAt: timestamp,
     };
-    await writePosts(root, posts);
-    const { files, deletions } = await writePublic(root, posts, { changedSlug: post.slug });
-    let github = "skipped";
-    try {
-      github = await commitToGithub({
-        env,
-        fetchImpl,
-        message: `Publish “${cleaned.title}”`,
-        files,
-        deletions,
-      });
-    } catch (error) {
-      console.error("GitHub publish failed", error.githubStatus || error.code || "error");
-      github = "failed";
-    }
+    await db.put(post);
+    const github = await sync(`Publish “${cleaned.title}”`, posts, { changedSlug: post.slug });
     return { post: toClient(post), github };
   }
 
   async function unpublish(id, now) {
-    const posts = await readPosts(root);
+    const posts = await db.all();
     const post = posts.find((item) => item.id === id);
-    if (!post) {
-      const error = new Error("not_found");
-      error.status = 404;
-      error.code = "not_found";
-      throw error;
-    }
-    const removedSlug = post.slug;
+    if (!post) throw failure(404, "not_found");
+    const removedSlug = post.live ? post.slug : null;
+    if (removedSlug) requireGithub();
     post.live = null;
     post.updatedAt = new Date(now).toISOString();
-    await writePosts(root, posts);
-    const { files, deletions } = await writePublic(root, posts, { removedSlug });
-    let github = "skipped";
-    if (removedSlug) {
-      try {
-        github = await commitToGithub({
-          env,
-          fetchImpl,
-          message: `Unpublish “${post.title || "Untitled"}”`,
-          files,
-          deletions,
-        });
-      } catch (error) {
-        console.error("GitHub unpublish failed", error.githubStatus || error.code || "error");
-        github = "failed";
-      }
-    }
+    await db.put(post);
+    const github = removedSlug
+      ? await sync(`Unpublish “${post.title || "Untitled"}”`, posts, { removedSlug })
+      : "skipped";
     return { post: toClient(post), github };
   }
 
   async function remove(id) {
-    const posts = await readPosts(root);
+    const posts = await db.all();
     const post = posts.find((item) => item.id === id);
-    if (!post) {
-      const error = new Error("not_found");
-      error.status = 404;
-      error.code = "not_found";
-      throw error;
-    }
+    if (!post) throw failure(404, "not_found");
     const removedSlug = post.live ? post.slug : null;
+    if (removedSlug) requireGithub();
+    await db.remove(id);
     const next = posts.filter((item) => item.id !== id);
-    await writePosts(root, next);
-    const { files, deletions } = await writePublic(root, next, { removedSlug });
-    let github = "skipped";
-    if (removedSlug) {
-      try {
-        github = await commitToGithub({
-          env,
-          fetchImpl,
-          message: `Remove “${post.title || "Untitled"}”`,
-          files,
-          deletions,
-        });
-      } catch (error) {
-        console.error("GitHub delete failed", error.githubStatus || error.code || "error");
-        github = "failed";
-      }
-    }
+    const github = removedSlug ? await sync(`Remove “${post.title || "Untitled"}”`, next, { removedSlug }) : "skipped";
     return { ok: true, github };
   }
 

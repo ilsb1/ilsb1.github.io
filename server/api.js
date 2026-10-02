@@ -4,7 +4,9 @@ import { isAllowedEmail, normalizeEmail } from "../shared/allowlist.js";
 import { isPostId } from "../shared/text.js";
 import { signSession, verifySession } from "../shared/session.js";
 import { mailIsConfigured, sendLoginCode } from "./mail.js";
-import { createStore, loadSecret } from "./store.js";
+import { createRedis, createRedisPosts, createRedisState, redisConfig } from "./redis.js";
+import { createMemoryState } from "./state.js";
+import { createFilePosts, createStore, loadSecret } from "./store.js";
 
 const OTP_MS = 10 * 60 * 1000;
 const RESEND_MS = 30 * 1000;
@@ -55,19 +57,40 @@ function fail(error) {
   return { status, json: { error: code } };
 }
 
-export async function createApi({ root, env, fetchImpl, wait, now = () => Date.now() }) {
-  const secret = await loadSecret(root, env);
-  const store = createStore({ root, env, fetchImpl });
-  const otps = new Map();
-  const ipHits = new Map();
+function notConfigured(what) {
+  const error = new Error(`${what}_not_configured`);
+  error.status = 503;
+  error.code = "not_configured";
+  return error;
+}
+
+/**
+ * `hosted` is for the public deployment: it never shows codes on the page,
+ * never writes to disk, and refuses to start without a secret and shared storage.
+ */
+export async function createApi({
+  root,
+  env,
+  fetchImpl,
+  wait,
+  now = () => Date.now(),
+  hosted = false,
+  redis: redisClient,
+  transport,
+}) {
+  if (hosted && !(env.AUTH_SECRET && env.AUTH_SECRET.length >= 32)) throw notConfigured("secret");
+  const config = redisConfig(env);
+  const redis = redisClient ?? (config ? createRedis(config, fetchImpl) : null);
+  if (hosted && !redis) throw notConfigured("storage");
+
+  const secret = hosted ? env.AUTH_SECRET : await loadSecret(root, env);
+  const state = redis ? createRedisState(redis) : createMemoryState();
+  const posts = redis ? createRedisPosts(redis) : createFilePosts(root);
+  const store = createStore({ root, env, fetchImpl, posts, hosted });
   const pause = wait || ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
 
-  function rateLimit(ip, current) {
-    const recent = (ipHits.get(ip) || []).filter((stamp) => current - stamp < IP_WINDOW_MS);
-    if (recent.length >= IP_MAX) return false;
-    recent.push(current);
-    ipHits.set(ip, recent);
-    return true;
+  async function rateLimit(ip, current) {
+    return (await state.countHit(ip, IP_WINDOW_MS, current)) <= IP_MAX;
   }
 
   function requireUser(request, current) {
@@ -84,13 +107,13 @@ export async function createApi({ root, env, fetchImpl, wait, now = () => Date.n
   async function requestCode(request) {
     const current = now();
     await pause(120);
-    if (!rateLimit(clientIp(request), current)) {
+    if (!(await rateLimit(clientIp(request), current))) {
       return { status: 429, json: { error: "rate_limited" } };
     }
     const email = normalizeEmail(request.body?.email);
     if (!looksLikeEmail(email)) return { status: 400, json: { error: "invalid_email" } };
 
-    const localPreview = isLocalHost(request.headers.host) && !env.RESEND_API_KEY;
+    const localPreview = !hosted && isLocalHost(request.headers.host) && !mailIsConfigured(env);
     if (!localPreview && !mailIsConfigured(env)) {
       return { status: 503, json: { error: "mail_not_configured" } };
     }
@@ -98,7 +121,7 @@ export async function createApi({ root, env, fetchImpl, wait, now = () => Date.n
     hashCode(secret, email, "000000");
     if (!isAllowedEmail(email)) return { status: 200, json: { ok: true, delivery: localPreview ? "preview" : "email" } };
 
-    const existing = otps.get(email);
+    const existing = await state.getCode(email);
     if (existing && existing.exp > current && current - existing.sentAt < RESEND_MS) {
       return {
         status: 200,
@@ -107,18 +130,17 @@ export async function createApi({ root, env, fetchImpl, wait, now = () => Date.n
     }
 
     const code = randomInt(0, 1_000_000).toString().padStart(6, "0");
-    otps.set(email, {
-      hash: hashCode(secret, email, code),
-      exp: current + OTP_MS,
-      attempts: 0,
-      sentAt: current,
-    });
+    await state.putCode(
+      email,
+      { hash: hashCode(secret, email, code).toString("hex"), exp: current + OTP_MS, sentAt: current },
+      OTP_MS,
+    );
 
     if (!localPreview) {
       try {
-        await sendLoginCode({ env, email, code, fetchImpl });
+        await sendLoginCode({ env, email, code, transport });
       } catch (error) {
-        otps.delete(email);
+        await state.dropCode(email);
         throw error;
       }
       return { status: 200, json: { ok: true, delivery: "email" } };
@@ -129,7 +151,7 @@ export async function createApi({ root, env, fetchImpl, wait, now = () => Date.n
   async function verifyCode(request) {
     const current = now();
     await pause(120);
-    if (!rateLimit(clientIp(request), current)) {
+    if (!(await rateLimit(clientIp(request), current))) {
       return { status: 429, json: { error: "rate_limited" } };
     }
     const email = normalizeEmail(request.body?.email);
@@ -137,23 +159,29 @@ export async function createApi({ root, env, fetchImpl, wait, now = () => Date.n
     if (!looksLikeEmail(email) || !/^\d{6}$/.test(code)) {
       return { status: 400, json: { error: "invalid_code" } };
     }
-    const record = otps.get(email);
+    const record = await state.getCode(email);
     const actual = hashCode(secret, email, code);
     if (!record) return { status: 401, json: { error: "code_mismatch" } };
     if (record.exp < current) {
-      otps.delete(email);
+      await state.dropCode(email);
       return { status: 401, json: { error: "code_expired" } };
     }
-    const matches = actual.length === record.hash.length && timingSafeEqual(actual, record.hash);
+    // Count the try before comparing, so parallel guesses can't get past the limit.
+    const tries = await state.countTry(email, OTP_MS);
+    if (tries > MAX_ATTEMPTS) {
+      await state.dropCode(email);
+      return { status: 401, json: { error: "too_many_attempts" } };
+    }
+    const expected = Buffer.from(String(record.hash), "hex");
+    const matches = actual.length === expected.length && timingSafeEqual(actual, expected);
     if (!matches) {
-      record.attempts += 1;
-      if (record.attempts >= MAX_ATTEMPTS) {
-        otps.delete(email);
+      if (tries >= MAX_ATTEMPTS) {
+        await state.dropCode(email);
         return { status: 401, json: { error: "too_many_attempts" } };
       }
       return { status: 401, json: { error: "code_mismatch" } };
     }
-    otps.delete(email);
+    await state.dropCode(email);
     const session = signSession(email, secret, current);
     return {
       status: 200,

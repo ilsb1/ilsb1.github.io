@@ -1,39 +1,47 @@
+import nodemailer from "nodemailer";
+
 export function mailIsConfigured(env) {
-  return Boolean(env.RESEND_API_KEY && env.MAIL_FROM);
+  return Boolean(env.GMAIL_USER && env.GMAIL_APP_PASSWORD);
 }
 
-export async function sendLoginCode({ env, email, code, fetchImpl = fetch }) {
-  if (!env.RESEND_API_KEY) return "preview";
-  if (!env.MAIL_FROM) {
-    const error = new Error("mail_not_configured");
-    error.status = 503;
-    error.code = "mail_not_configured";
-    throw error;
-  }
-  const pretty = `${code.slice(0, 3)} ${code.slice(3)}`;
-  const response = await fetchImpl("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
+function gmailTransport(env) {
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: env.GMAIL_USER,
+      // Google shows app passwords in groups of four, and people often paste the spaces too.
+      pass: env.GMAIL_APP_PASSWORD.replace(/\s+/g, ""),
     },
-    body: JSON.stringify({
-      from: env.MAIL_FROM,
-      to: [email],
-      subject: "Your writing desk code",
+  });
+}
+
+export async function sendLoginCode({ env, email, code, transport }) {
+  const pretty = `${code.slice(0, 3)} ${code.slice(3)}`;
+  const mailer = transport ?? gmailTransport(env);
+  try {
+    await mailer.sendMail({
+      from: { name: "Writing desk", address: env.GMAIL_USER },
+      to: email,
+      subject: `Your writing desk code: ${pretty}`,
       text: [
         `Your sign-in code is ${pretty}`,
         "",
         "It expires in 10 minutes. If you did not ask for this, you can ignore this email.",
         "",
       ].join("\n"),
-    }),
-  });
-  if (!response.ok) {
-    const error = new Error("mail_failed");
-    error.status = 502;
-    error.code = "mail_failed";
-    throw error;
+      html: [
+        '<div style="font-family:Georgia,serif;font-size:17px;color:#1d1b18;line-height:1.5">',
+        "<p>Your sign-in code for the writing desk is</p>",
+        `<p style="font-size:34px;letter-spacing:6px;font-weight:bold;margin:12px 0">${pretty}</p>`,
+        '<p style="color:#6f675c">It expires in 10 minutes. If you did not ask for this, you can ignore this email.</p>',
+        "</div>",
+      ].join(""),
+    });
+  } catch (error) {
+    console.error("Sign-in email failed", error?.responseCode || error?.code || "error");
+    const failed = new Error("mail_failed");
+    failed.status = 502;
+    failed.code = "mail_failed";
+    throw failed;
   }
-  return "email";
 }

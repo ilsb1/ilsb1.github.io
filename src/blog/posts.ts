@@ -281,7 +281,12 @@ export function deskError(code: string) {
     case "rate_limited":
       return "Too many tries for now. Please wait a few minutes.";
     case "mail_not_configured":
-      return "Email sign-in isn't set up on this website yet. Open the desk on the computer where the site is being prepared.";
+    case "not_configured":
+      return "The writing desk isn't fully set up on this website yet. Please try again a little later.";
+    case "publish_not_configured":
+      return "Publishing isn't set up on this website yet. Your piece is saved, so nothing is lost.";
+    case "storage_failed":
+      return "The desk couldn't reach its storage just now. Your writing is kept safely on this computer.";
     case "mail_failed":
       return "The email couldn't be sent. Wait a moment and try again.";
     case "title_required":

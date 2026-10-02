@@ -1,6 +1,10 @@
 const REPO_RE = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 const BRANCH_RE = /^(?!\/)(?!.*\.\.)[A-Za-z0-9._/-]+$/;
 
+export function githubConfigured(env) {
+  return Boolean(env.GITHUB_TOKEN && env.GITHUB_REPO);
+}
+
 function githubConfig(env) {
   const token = env.GITHUB_TOKEN || "";
   const repo = env.GITHUB_REPO || "";
