@@ -226,3 +226,24 @@ export const IconPaste = (p: IconProps) => (
     <path d="M9 4V3h6v1M9 11h6M9 15h4" />
   </Icon>
 );
+
+export const IconLaptop = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="4" y="5" width="16" height="11" rx="1.5" />
+    <path d="M2 19h20" />
+  </Icon>
+);
+
+export const IconPhone = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="7" y="2.5" width="10" height="19" rx="2.2" />
+    <path d="M11 18.5h2" />
+  </Icon>
+);
+
+export const IconLock = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="5" y="11" width="14" height="9.5" rx="2" />
+    <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+  </Icon>
+);

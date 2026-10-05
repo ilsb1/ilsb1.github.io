@@ -29,7 +29,7 @@ import {
   type ReactNode,
 } from "react";
 import { fileExtension, videoEmbed } from "../../shared/content.js";
-import PageBlocks, { mediaUrl } from "../../src/content/Blocks";
+import { mediaUrl } from "../../src/content/Blocks";
 import {
   BLOG_URL,
   SIGNED_OUT,
@@ -47,13 +47,14 @@ import {
   type PublishResult,
   type Session,
 } from "./api";
-import { BlockCard, BlockIcon, Segmented, blockSummary } from "./BlockCards";
+import { BlockCard, BlockIcon, blockSummary } from "./BlockCards";
 import Dialog from "./Dialog";
 import { EditorContext, type EditorApi } from "./editorContext";
 import PageTextCard from "./FieldEditors";
 import { pickFiles } from "./filePick";
-import { IconArrowLeft, IconCheck, IconClose, IconExternal, IconMore, IconPlus } from "./icons";
+import { IconArrowLeft, IconCheck, IconClose, IconExternal, IconEye, IconMore, IconPlus } from "./icons";
 import Menu, { type MenuItem } from "./Menu";
+import PagePreview, { type PreviewScroll } from "./PagePreview";
 import { goBack } from "./nav";
 import {
   BLOCK_LABELS,
@@ -63,6 +64,7 @@ import {
   blankBlock,
   changedFields,
   draftContent,
+  fieldProblem,
   fieldValues,
   localStatus,
   newId,
@@ -72,7 +74,6 @@ import {
   summarizeChanges,
   toBlocks,
   toEdit,
-  type Block,
   type BlockType,
   type EditBlock,
   type EditPhoto,
@@ -325,7 +326,9 @@ function Workbench({
   const [versions, setVersions] = useState<Record<string, number>>({});
   const [imageUploads, setImageUploads] = useState<Record<string, string>>({});
   const [chooser, setChooser] = useState<number | null>(null);
-  const [preview, setPreview] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewWarm, setPreviewWarm] = useState(false);
+  const [previewScroll, setPreviewScroll] = useState<PreviewScroll>("top");
   const [drag, setDrag] = useState<Drag>(null);
   const [overSlot, setOverSlot] = useState<number | null>(null);
   const [fileTarget, setFileTarget] = useState<FileTarget | null>(null);
@@ -1035,15 +1038,22 @@ function Workbench({
     }
   }
 
-  const displayBlocks = useMemo(
-    () =>
-      toBlocks(blocks).map((block): Block => {
-        if (block.type === "photos") return { ...block, items: block.items.map((item) => ({ ...item, src: display(item.src) })) };
-        if ("src" in block) return { ...block, src: display(block.src) } as Block;
-        return block;
-      }),
-    [blocks, display],
-  );
+  useEffect(() => {
+    if (!wide) return;
+    const timer = window.setTimeout(() => setPreviewWarm(true), 2500);
+    return () => window.clearTimeout(timer);
+  }, [wide]);
+
+  const warmPreview = () => setPreviewWarm(true);
+
+  function openPreview() {
+    const section = document.getElementById("pe-blocks")?.closest("section");
+    const lookingAtBlocks = Boolean(section && content.blocks.length && section.getBoundingClientRect().top < window.innerHeight * 0.45);
+    setPreviewScroll(lookingAtBlocks ? "blocks" : "top");
+    setPublishing({ step: "closed" });
+    setPreviewWarm(true);
+    setPreviewOpen(true);
+  }
 
   const group = PAGE_GROUPS.find((item) => item.id === page.group)?.label ?? "";
   const siteHost = BLOG_URL.replace(/^https?:\/\//, "");
@@ -1068,8 +1078,13 @@ function Workbench({
     );
   } else if (status === "changed") {
     publishControl = (
-      <button type="button" className="btn btn--primary" onClick={() => setPublishing({ step: "confirm", error: "" })}>
-        {live ? "Publish changes" : "Publish"}
+      <button
+        type="button"
+        className="btn btn--primary"
+        onPointerEnter={warmPreview}
+        onClick={() => setPublishing({ step: "confirm", error: "" })}
+      >
+        {live && wide ? "Publish changes" : "Publish"}
       </button>
     );
   } else if (status === "published") {
@@ -1081,6 +1096,31 @@ function Workbench({
     );
   } else {
     publishControl = <span className="published published--muted">No changes yet</span>;
+  }
+
+  const previewNotes: string[] = [];
+  if (pendingUploads) {
+    previewNotes.push(
+      pendingUploads === 1
+        ? "A file is still uploading. It will appear here when it's done."
+        : `${pendingUploads} files are still uploading. They will appear here when they're done.`,
+    );
+  }
+  if (unfinished) {
+    previewNotes.push(unfinished === 1 ? "One element isn't finished, so it isn't shown." : `${unfinished} elements aren't finished, so they aren't shown.`);
+  }
+  if (uploads.failed) {
+    previewNotes.push(
+      uploads.failed === 1 ? "One file couldn't be uploaded, so it's left out." : `${uploads.failed} files couldn't be uploaded, so they're left out.`,
+    );
+  }
+  const brokenFields = page.fields.filter((field) => fieldProblem(field, values[field.key])).map((field) => `“${field.label}”`);
+  if (brokenFields.length) {
+    previewNotes.push(
+      brokenFields.length === 1
+        ? `${brokenFields[0]} needs fixing, so the original is shown for now.`
+        : `${brokenFields.slice(0, -1).join(", ")} and ${brokenFields[brokenFields.length - 1]} need fixing, so the originals are shown for now.`,
+    );
   }
 
   const lines = publishing.step === "confirm" || publishing.step === "working" ? summarizeChanges(page, content, live) : [];
@@ -1127,6 +1167,19 @@ function Workbench({
             </span>
             <div className="bar__end">
               <Menu label="More" trigger={<IconMore size={20} />} items={menuItems} className="menu--right" />
+              <button
+                type="button"
+                className="btn btn--ghost btn--preview"
+                aria-label="Preview the page"
+                title="See the page exactly as it will look on the website"
+                onClick={openPreview}
+                onPointerEnter={warmPreview}
+                onFocus={warmPreview}
+                onTouchStart={warmPreview}
+              >
+                <IconEye size={18} />
+                <span>Preview</span>
+              </button>
               {publishControl}
             </div>
           </header>
@@ -1178,58 +1231,37 @@ function Workbench({
               <section className="pe-section" aria-labelledby="pe-blocks">
                 <div className="pe-section__head">
                   <h2 id="pe-blocks">Added to the page</h2>
-                  {blocks.length ? (
-                    <Segmented
-                      label="Show"
-                      value={preview ? "preview" : "edit"}
-                      options={[
-                        { value: "edit", label: "Edit" },
-                        { value: "preview", label: "Preview" },
-                      ]}
-                      onChange={(value) => setPreview(value === "preview")}
-                    />
-                  ) : null}
                 </div>
                 <p className="pe-section__hint">{page.blocksHint}</p>
 
-                {preview ? (
-                  <div className="site-preview">
-                    {displayBlocks.length ? (
-                      <PageBlocks blocks={displayBlocks} mediaBase="" />
-                    ) : (
-                      <p className="hint">Nothing is finished yet, so nothing extra shows on the page.</p>
-                    )}
-                  </div>
-                ) : (
-                  <BlocksZone className={`blocks${drag?.type === "block" ? " is-sorting" : ""}${drag?.type === "palette" ? " is-receiving" : ""}`}>
-                    {blocks.length === 0 ? (
-                      <EmptyZone active={activeSlot === 0} wide={wide} onChoose={(type) => addOfType(type, 0)} />
-                    ) : (
-                      <SortableContext items={blocks.map((block) => block.id)} strategy={verticalListSortingStrategy}>
-                        {blocks.map((block, index) => (
-                          <SortableBlock
-                            key={block.id}
-                            block={block}
-                            index={index}
-                            count={blocks.length}
-                            highlight={photoTarget === block.id}
-                            slot={slot(index)}
-                            onMove={moveBlock}
-                            onRemove={removeBlock}
-                          />
-                        ))}
-                        {slot(blocks.length)}
-                      </SortableContext>
-                    )}
-                  </BlocksZone>
-                )}
+                <BlocksZone className={`blocks${drag?.type === "block" ? " is-sorting" : ""}${drag?.type === "palette" ? " is-receiving" : ""}`}>
+                  {blocks.length === 0 ? (
+                    <EmptyZone active={activeSlot === 0} wide={wide} onChoose={(type) => addOfType(type, 0)} />
+                  ) : (
+                    <SortableContext items={blocks.map((block) => block.id)} strategy={verticalListSortingStrategy}>
+                      {blocks.map((block, index) => (
+                        <SortableBlock
+                          key={block.id}
+                          block={block}
+                          index={index}
+                          count={blocks.length}
+                          highlight={photoTarget === block.id}
+                          slot={slot(index)}
+                          onMove={moveBlock}
+                          onRemove={removeBlock}
+                        />
+                      ))}
+                      {slot(blocks.length)}
+                    </SortableContext>
+                  )}
+                </BlocksZone>
               </section>
             </main>
 
             {wide ? <Palette onAdd={(type) => addOfType(type, blocksRef.current.length)} /> : null}
           </div>
 
-          {!wide && !typing && !preview ? <AddBar onAdd={(type) => addOfType(type, blocksRef.current.length)} /> : null}
+          {!wide && !typing ? <AddBar onAdd={(type) => addOfType(type, blocksRef.current.length)} /> : null}
         </div>
 
         <DragOverlay dropAnimation={null}>
@@ -1247,6 +1279,20 @@ function Workbench({
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      <PagePreview
+        open={previewOpen}
+        warm={previewWarm}
+        page={page}
+        content={content}
+        contentKey={contentKey}
+        mediaBase={mediaBase}
+        scroll={previewScroll}
+        status={status}
+        action={pendingUploads > 0 || status === "changed" ? publishControl : null}
+        notes={previewNotes}
+        onClose={() => setPreviewOpen(false)}
+      />
 
       <Dialog
         open={publishing.step !== "closed"}
@@ -1277,6 +1323,12 @@ function Workbench({
             ) : null}
             {publishing.step === "confirm" && publishing.error ? <p className="error">{publishing.error}</p> : null}
             <div className="dialog__actions">
+              {!previewOpen ? (
+                <button type="button" className="btn-text dialog__aside" disabled={publishing.step === "working"} onClick={openPreview}>
+                  <IconEye size={16} />
+                  See a preview first
+                </button>
+              ) : null}
               <button type="button" className="btn btn--ghost" disabled={publishing.step === "working"} onClick={() => setPublishing({ step: "closed" })}>
                 Cancel
               </button>

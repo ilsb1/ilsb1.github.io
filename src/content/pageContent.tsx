@@ -1,7 +1,8 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useMemo, useSyncExternalStore, type ReactNode } from "react";
 import { parsePageFile } from "../../shared/content.js";
 import { pageDefaults, type FieldValue, type ImageValue } from "./defaults";
 import ErrorBoundary from "./ErrorBoundary";
+import { previewPage, reportPreviewFallback, subscribePreview } from "./preview";
 import type { Block } from "./types";
 
 type Published = { fields: Record<string, unknown>; blocks: Block[] };
@@ -31,9 +32,8 @@ function isImage(value: unknown): value is ImageValue {
   return Boolean(value && typeof value === "object" && typeof (value as ImageValue).src === "string");
 }
 
-function makeView(pageId: string, useEdits: boolean): PageView {
+function makeView(pageId: string, edits: Published | undefined): PageView {
   const defaults = pageDefaults(pageId);
-  const edits = useEdits ? published.get(pageId) : undefined;
   const pick = (key: string): unknown => {
     const value = edits?.fields[key];
     return value === undefined ? defaults[key] : value;
@@ -68,12 +68,18 @@ const originals = new Map<string, PageView>();
 
 const OriginalsOnly = createContext(false);
 
+const noPreview = () => null;
+
 export function usePage(pageId: string): PageView {
   const originalsOnly = useContext(OriginalsOnly);
+  const preview = useSyncExternalStore(subscribePreview, previewPage, noPreview);
+  const previewed = !originalsOnly && preview?.id === pageId ? preview : null;
+  const previewView = useMemo(() => (previewed ? makeView(pageId, previewed) : null), [pageId, previewed]);
+  if (previewView) return previewView;
   const cache = originalsOnly ? originals : views;
   let view = cache.get(pageId);
   if (!view) {
-    view = makeView(pageId, !originalsOnly);
+    view = makeView(pageId, originalsOnly ? undefined : published.get(pageId));
     cache.set(pageId, view);
   }
   return view;
@@ -84,6 +90,7 @@ export function usePage(pageId: string): PageView {
  * original built-in content; if even that fails, a short notice is shown.
  */
 export function PageBoundary({ children }: { children: ReactNode }) {
+  const preview = useSyncExternalStore(subscribePreview, previewPage, noPreview);
   return (
     <ErrorBoundary
       fallback={
@@ -93,7 +100,11 @@ export function PageBoundary({ children }: { children: ReactNode }) {
         </div>
       }
     >
-      <ErrorBoundary fallback={<OriginalsOnly.Provider value={true}>{children}</OriginalsOnly.Provider>}>
+      <ErrorBoundary
+        resetKey={preview?.seq}
+        onError={preview ? reportPreviewFallback : undefined}
+        fallback={<OriginalsOnly.Provider value={true}>{children}</OriginalsOnly.Provider>}
+      >
         {children}
       </ErrorBoundary>
     </ErrorBoundary>

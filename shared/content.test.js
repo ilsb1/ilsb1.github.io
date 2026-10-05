@@ -124,3 +124,48 @@ test("matches uploads to the right kind by extension", () => {
   assert.equal(uploadKind("drawing.svg"), null);
   assert.equal(uploadKind("noextension"), null);
 });
+
+test("a preview cleans to exactly what the published page file reads back as", () => {
+  const messy = {
+    "about-author": {
+      fields: {
+        title: "  About Sevinj  ",
+        name: "Dr. S. Hasanova",
+        photo: { src: "/media/2026/10/ab12cd34-portrait.jpg", width: 1200, height: 1500 },
+        scholarUrl: "scholar.google.com/citations?user=abc",
+        linkedinUrl: "not a link",
+        bio: `<p>First <b>bold</b> &amp; <i>italic</i><br>line</p><script>alert(1)</script><h2 style="color:red">Interests</h2><ul><li>One</li><li><a href="https://example.com" onclick="x()">Two</a></li></ul><p><font size="5">Big</font> and&nbsp;spaced</p><div>loose text</div>`,
+      },
+      blocks: [
+        { id: "t1", type: "text", html: "<p>Hello <u>there</u></p><img src=x onerror=alert(1)>" },
+        {
+          id: "p1",
+          type: "photos",
+          size: "large",
+          items: [
+            { src: "/media/2026/10/a-garden.jpg", width: 3000, height: 2000, caption: "  The garden  " },
+            { src: "https://store1.public.blob.vercel-storage.com/media/2026/10/b.png", width: 800, height: 600, caption: "" },
+            { src: "javascript:alert(1)", caption: "bad" },
+          ],
+        },
+        { id: "v1", type: "video", source: "link", url: "https://youtu.be/dQw4w9WgXcQ?t=42", caption: "Watch" },
+        { id: "v2", type: "video", source: "file", src: "/media/2026/10/c-lecture.mp4", caption: "" },
+        { id: "a1", type: "audio", src: "/media/2026/10/d-talk.mp3", title: "Talk" },
+        { id: "f1", type: "file", src: "/media/2026/10/e-handout.pdf", title: "Handout", name: "handout.pdf", size: 1234, ext: "pdf" },
+        { id: "l1", type: "link", url: "britishcouncil.org", title: "", note: "  Practice  " },
+        { id: "x1", type: "mystery" },
+      ],
+    },
+    "unit-2": {
+      fields: { title: "Unit 3", subtitle: "Travel", description: "<p>Plan a <b>trip</b>.</p>", tracks: ["", "  Second  "] },
+      blocks: [],
+    },
+  };
+  for (const [id, input] of Object.entries(messy)) {
+    const preview = normalizePage(id, input);
+    const saved = normalizePage(id, JSON.parse(JSON.stringify(preview)));
+    const published = normalizePage(id, saved);
+    const file = `${JSON.stringify({ page: id, publishedAt: "2026-10-05T12:00:00.000Z", ...published }, null, 2)}\n`;
+    assert.deepEqual(parsePageFile(id, file), preview, id);
+  }
+});
