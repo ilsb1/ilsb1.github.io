@@ -1,23 +1,14 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { BOOK_TITLE } from "../constants/bookMeta";
-import coverImage from "../assets/cover.JPG";
+import BookEditionShowcase from "../components/BookEditionShowcase";
 
 export default function Landing() {
   return (
     <div className="landing-page">
       <section className="landing-panel" aria-labelledby="landing-heading">
         <div className="landing-layout">
-          <div className="landing-cover-wrap">
-            <img
-              src={coverImage}
-              alt={`Cover: ${BOOK_TITLE}`}
-              className="landing-cover"
-              width={640}
-              height={960}
-              decoding="async"
-            />
-          </div>
+          <BookEditionShowcase />
           <div className="landing-copy">
             <h2 id="landing-heading" className="landing-heading">
               {BOOK_TITLE}
@@ -27,7 +18,7 @@ export default function Landing() {
                 A CEFR B1 teaching resource for undergraduates: reading/listening and speaking/writing are
                 developed in parallel across units, with structured work in critical thinking and
                 academic writing, and recurrent attention to vocabulary in use, idioms in use, and
-                proverbs in use.  
+                proverbs in use.
               </p>
               <p>
                 <strong>1. Audio:</strong> Open{" "}

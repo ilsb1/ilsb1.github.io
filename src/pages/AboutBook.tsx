@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { BOOK_TITLE } from "../constants/bookMeta";
+import BookEditionShowcase from "../components/BookEditionShowcase";
 
 export default function AboutBook() {
   return (
@@ -12,6 +13,7 @@ export default function AboutBook() {
 
       <article className="about-content about-content--book" aria-labelledby="about-book-heading">
         <header className="book-hero" id="about-book-heading">
+          <BookEditionShowcase compact />
           <h3 className="book-title">{BOOK_TITLE}</h3>
         </header>
 
