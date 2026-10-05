@@ -1,3 +1,5 @@
+import { UNIT_IDS } from "../../shared/pages.js";
+
 export type Track = { title: string; file: string };
 
 export const units: Record<number, Track[]> = {
@@ -26,7 +28,7 @@ export const units: Record<number, Track[]> = {
 
 export const unitNumbers = Object.keys(units).map(Number).sort((a, b) => a - b);
 
-const displayUnitToInternalUnit = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12] as const;
+const displayUnitToInternalUnit: readonly number[] = UNIT_IDS;
 const internalToDisplayUnit = new Map<number, number>(
   displayUnitToInternalUnit.map((internalUnitId, index) => [internalUnitId, index + 1])
 );

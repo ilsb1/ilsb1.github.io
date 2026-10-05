@@ -1,84 +1,44 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { BOOK_TITLE } from "../constants/bookMeta";
 import BookEditionShowcase from "../components/BookEditionShowcase";
+import { usePage } from "../content/pageContent";
+import RichText from "../content/RichText";
+import SiteBlocks, { TextLines } from "../content/SiteBlocks";
 
 export default function AboutBook() {
+  const page = usePage("about-book");
+  const subtitle = page.text("subtitle");
+  const bookTitle = page.text("bookTitle");
+  const signatureName = page.text("signatureName");
+  const signatureRole = page.text("signatureRole");
+
   return (
     <div className="about-page">
       <div className="page-header">
-        <h2 className="page-title">About the Book</h2>
-        <p className="page-subtitle">{BOOK_TITLE}</p>
+        <h2 className="page-title">{page.text("title")}</h2>
+        {subtitle ? <p className="page-subtitle">{subtitle}</p> : null}
       </div>
 
       <article className="about-content about-content--book" aria-labelledby="about-book-heading">
         <header className="book-hero" id="about-book-heading">
           <BookEditionShowcase compact />
-          <h3 className="book-title">{BOOK_TITLE}</h3>
+          {bookTitle ? <h3 className="book-title">{bookTitle}</h3> : null}
         </header>
 
-        <div className="about-prose about-text-block about-text-block--flush">
-          <p>
-            It is my pleasure to present {BOOK_TITLE}, a teaching resource created to support undergraduate
-            learners in their academic journey of developing confident and purposeful communication.
-            This book is shaped by over twenty years of my personal experience in teaching English
-            at all levels, as well as by long-term observation of B1 learners&apos; study styles,
-            interaction patterns, educational challenges and academic progress within a higher
-            education context.
-          </p>
-          <p>
-            This teaching resource is closely aligned with Common European Framework of References (CEFR) B1
-            descriptors as well as well-informed by the Cambridge TKT framework, ensuring
-            internationally relevant, sound and state-of-the-art methodology. Moreover, it reflects
-            core TESOL and ELT principles, including strong reliance on communicative language
-            teaching, task-based learning, learner autonomy, and reflective practice based on
-            critical thinking tasks. Altogether, these principles are applied in a practical,
-            student-centred classroom approach, allowing students to engage actively with language
-            rather than learn it theoretically.
-          </p>
-          <p>
-            Listening, reading, speaking, and writing skills are equally integrated into each unit
-            so that skills develop simultaneously. In addition, each language input in the units is
-            immediately followed by a meaningful output, helping learners build a balanced focus on
-            fluency and accuracy at the same time. Topical vocabulary, idioms, proverbs and
-            functional language are presented in level-specific context as well as recycled through
-            various tasks to encourage classroom engagement and real-world language use.
-          </p>
-          <p>
-            Texts and Listening activities are based on exposure to authentic, native-speaker
-            sources, offering natural language in real academic and social communication samples.
-            There is a particular focus on Critical Thinking and Academic Writing that are carefully
-            scaffolded to guide students with step-by-step coherent writings:
-            punctuation/capitalization rules → topic/supporting/concluding sentences → paragraphs →
-            academic essays.
-          </p>
-          <p>
-            Moreover, the teaching resource creates modern learning environments, suggesting
-            thoughtful use of multiple digital resources and global online study platforms. Selected
-            educational AI tools are used ethically only as supportive aids for feedback and layout,
-            with full respect for academic integrity and copyright. Here, technology is used to
-            enhance learning, not to replace it.
-          </p>
-          <p>
-            Overall, this book is flexible, student-centred and teacher-friendly, due to its
-            easy adaptability to different institutional contexts and diverse teaching and learning
-            styles. I sincerely hope that this book will achieve its main goal and help learners
-            use academic English with confidence and a clear sense of purpose, while making the
-            learning process more engaging, enjoyable, and meaningful for both students and
-            teachers.
-          </p>
-        </div>
+        <RichText className="about-prose about-text-block about-text-block--flush rich-text" html={page.html("body")} />
 
-        <aside className="about-signature" aria-label="Author">
-          <p className="about-signature__name">Dr. Sevinj Aghahuseyn Hasanova</p>
-          <p className="about-signature__role">
-            Associate Professor of the
-            <br />
-            Chair of English Lexicology
-            <br />
-            Azerbaijan University of Languages
-          </p>
-        </aside>
+        <SiteBlocks blocks={page.blocks} className="page-blocks--in-card" />
+
+        {signatureName || signatureRole ? (
+          <aside className="about-signature" aria-label="Author">
+            {signatureName ? <p className="about-signature__name">{signatureName}</p> : null}
+            {signatureRole ? (
+              <p className="about-signature__role">
+                <TextLines text={signatureRole} />
+              </p>
+            ) : null}
+          </aside>
+        ) : null}
 
         <footer className="about-footer-nav">
           <Link to="/listenings" className="about-footer-nav__link about-footer-nav__link--secondary">

@@ -45,6 +45,7 @@ export function readServerEnv(cwd = process.cwd()) {
     "KV_REST_API_TOKEN",
     "UPSTASH_REDIS_REST_URL",
     "UPSTASH_REDIS_REST_TOKEN",
+    "BLOB_READ_WRITE_TOKEN",
   ]) {
     if (process.env[key]) env[key] = process.env[key];
   }

@@ -1,12 +1,17 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { usePage } from "../content/pageContent";
+import RichText from "../content/RichText";
+import SiteBlocks from "../content/SiteBlocks";
 import { displayUnits } from "../data/listenings";
 
 export default function Listenings() {
+  const page = usePage("recordings");
+  const downloadNote = page.text("downloadNote");
   return (
     <div className="listenings-page">
       <div className="page-header">
-        <h2 className="page-title">Listening Tracks</h2>
+        <h2 className="page-title">{page.text("title")}</h2>
         <p className="page-subtitle">
           <Link to="/" className="listenings-home-link">
             Welcome page
@@ -31,11 +36,11 @@ export default function Listenings() {
           >
             Download all listening tracks (.zip)
           </a>
-          <p className="listenings-download-note">
-            For offline use: one ZIP file with all Unit 1-12 listening tracks.
-          </p>
+          {downloadNote ? <p className="listenings-download-note">{downloadNote}</p> : null}
         </div>
       </div>
+
+      <RichText className="page-intro rich-text" html={page.html("intro")} />
 
       <div className="units-grid" role="list">
         {displayUnits.map(({ displayUnitNumber, internalUnitId }) => (
@@ -51,7 +56,8 @@ export default function Listenings() {
           </Link>
         ))}
       </div>
+
+      <SiteBlocks blocks={page.blocks} />
     </div>
   );
 }
-

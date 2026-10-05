@@ -109,7 +109,13 @@ function asPost(value: unknown): Post {
   };
 }
 
-async function request(path: string, options: { method?: string; token?: string; body?: unknown } = {}) {
+export const SIGNED_OUT = "For safety, you've been signed out. Please sign in again.";
+
+export function siteLink(path: string) {
+  return `${BLOG_URL}${path}`;
+}
+
+export async function request(path: string, options: { method?: string; token?: string; body?: unknown } = {}) {
   let response: Response;
   try {
     response = await fetch(path, {
@@ -182,6 +188,73 @@ export async function deletePost(token: string, id: string) {
   await request(`/api/posts/${id}`, { method: "DELETE", token, body: {} });
 }
 
+export type PageStatus = "original" | "changed" | "published";
+export type PageSummary = { id: string; status: PageStatus; updatedAt: string | null; publishedAt: string | null };
+export type PageContent = { fields: Record<string, unknown>; blocks: unknown[] };
+export type PageRecord = PageSummary & { draft: PageContent; live: PageContent | null };
+
+function asStatus(value: unknown): PageStatus {
+  return value === "changed" || value === "published" ? value : "original";
+}
+
+function asContent(value: unknown): PageContent {
+  const content = value as Partial<PageContent> | null;
+  return {
+    fields: content?.fields && typeof content.fields === "object" ? (content.fields as Record<string, unknown>) : {},
+    blocks: Array.isArray(content?.blocks) ? content.blocks : [],
+  };
+}
+
+function asSummary(value: unknown): PageSummary {
+  const page = value as Partial<PageSummary> | null;
+  if (!page || typeof page.id !== "string") throw new ApiError(500, "request_failed");
+  return {
+    id: page.id,
+    status: asStatus(page.status),
+    updatedAt: typeof page.updatedAt === "string" ? page.updatedAt : null,
+    publishedAt: typeof page.publishedAt === "string" ? page.publishedAt : null,
+  };
+}
+
+function asRecord(value: unknown): PageRecord {
+  const page = value as Partial<PageRecord> | null;
+  return { ...asSummary(page), draft: asContent(page?.draft), live: page?.live ? asContent(page.live) : null };
+}
+
+function mediaBaseOf(data: Record<string, unknown>) {
+  return typeof data.mediaBase === "string" ? data.mediaBase.replace(/\/$/, "") : "";
+}
+
+export async function listPages(token: string) {
+  const data = await request("/api/pages", { token });
+  return { pages: Array.isArray(data.pages) ? data.pages.map(asSummary) : [], mediaBase: mediaBaseOf(data) };
+}
+
+export async function getPage(token: string, id: string) {
+  const data = await request(`/api/pages/${id}`, { token });
+  return { page: asRecord(data.page), mediaBase: mediaBaseOf(data) };
+}
+
+export async function savePage(token: string, id: string, content: PageContent) {
+  const data = await request(`/api/pages/${id}`, { method: "PUT", token, body: content });
+  return asRecord(data.page);
+}
+
+export async function publishPage(token: string, id: string, content: PageContent) {
+  const data = await request(`/api/pages/${id}/publish`, { method: "POST", token, body: content });
+  return { page: asRecord(data.page), result: publishResult(data.github) };
+}
+
+export async function discardPage(token: string, id: string) {
+  const data = await request(`/api/pages/${id}/discard`, { method: "POST", token, body: {} });
+  return asRecord(data.page);
+}
+
+export async function resetPage(token: string, id: string) {
+  const data = await request(`/api/pages/${id}/reset`, { method: "POST", token, body: {} });
+  return { page: asRecord(data.page), result: publishResult(data.github) };
+}
+
 export function isSignedOut(error: unknown) {
   return error instanceof ApiError && error.status === 401 && error.code === "unauthorized";
 }
@@ -213,6 +286,20 @@ export function errorMessage(error: unknown) {
       return "Please write something in the post first.";
     case "offline":
       return "Can't reach the internet right now. Please check your connection.";
+    case "publish_failed":
+      return "The website couldn't be updated just now. Your changes are safe here, so please try again in a minute.";
+    case "upload_failed":
+      return "The file couldn't be saved just now. Please press Retry.";
+    case "too_large":
+      return "This is too big to add. Videos can be up to 300 MB, documents up to 100 MB and audio up to 80 MB.";
+    case "file_type":
+      return "This kind of file can't be added. Photos, videos, audio, PDFs and Office documents work.";
+    case "file_damaged":
+      return "This file seems to be damaged, or it isn't the kind of file its name says. Try saving it again.";
+    case "empty_file":
+      return "This file is empty.";
+    case "uploads_not_configured":
+      return "Files over 3 MB can't be uploaded until storage for big files is connected. Smaller files and video links work now.";
     default:
       return "Something went wrong. Please try again.";
   }

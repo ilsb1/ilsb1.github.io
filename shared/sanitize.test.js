@@ -31,6 +31,17 @@ test("keeps safe links and size classes only", () => {
   assert.doesNotMatch(sized, /evil|style|color/);
 });
 
+test("keeps links to other pages of the site without opening a new tab", () => {
+  assert.equal(safeHref("/listenings"), "/listenings");
+  assert.equal(safeHref("/unit/3#top"), "/unit/3#top");
+  assert.equal(safeHref("//evil.example"), null);
+  assert.equal(safeHref("/\\evil.example"), null);
+  assert.equal(
+    sanitizeHtml('<a href="/listening-scripts">Scripts</a>'),
+    '<a href="/listening-scripts">Scripts</a>',
+  );
+});
+
 test("turns pasted divs into paragraphs and headings into section headings", () => {
   assert.equal(sanitizeHtml("<div>Hello</div>"), "<p>Hello</p>");
   assert.equal(sanitizeHtml("<h1>Section</h1>"), "<h2>Section</h2>");

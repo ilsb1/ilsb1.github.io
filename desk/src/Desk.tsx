@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { formatDate } from "../../shared/text.js";
 import {
   ApiError,
@@ -7,6 +7,7 @@ import {
   canPublish,
   deletePost,
   errorMessage,
+  SIGNED_OUT,
   hasUnpublishedEdits,
   isBlank,
   isSignedOut,
@@ -22,11 +23,9 @@ import Dialog from "./Dialog";
 import Editor, { type EditorHandle } from "./Editor";
 import { IconArrowLeft, IconCheck, IconExternal, IconPen, IconPlus } from "./icons";
 
-const SIGNED_OUT = "For safety, you've been signed out. Please sign in again.";
-
 type SaveState = "saved" | "saving" | "error";
 
-type Props = { session: Session; onSignOut: (note?: string) => void };
+type Props = { session: Session; onSignOut: (note?: string) => void; topBar?: ReactNode };
 
 function postIdFromUrl() {
   return window.location.hash.slice(1) || null;
@@ -36,7 +35,7 @@ function byRecent(a: Post, b: Post) {
   return Date.parse(b.updatedAt) - Date.parse(a.updatedAt);
 }
 
-export default function Desk({ session, onSignOut }: Props) {
+export default function Desk({ session, onSignOut, topBar }: Props) {
   const token = session.token;
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [loadError, setLoadError] = useState("");
@@ -133,12 +132,21 @@ export default function Desk({ session, onSignOut }: Props) {
       if (pending.current.size > 0 || inflight.current) event.preventDefault();
     };
     const onPop = () => setOpenId(postIdFromUrl());
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        void flushRef.current();
+      }
+    };
     window.addEventListener("beforeunload", warn);
     window.addEventListener("popstate", onPop);
+    window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("beforeunload", warn);
       window.removeEventListener("popstate", onPop);
+      window.removeEventListener("keydown", onKey);
       window.clearTimeout(timer.current);
+      if (pending.current.size > 0) void flushRef.current();
     };
   }, []);
 
@@ -244,26 +252,28 @@ export default function Desk({ session, onSignOut }: Props) {
 
   return (
     <div className="screen">
-      <header className="bar">
-        <span className="brand">
-          <IconPen size={17} />
-          Writing desk
-        </span>
-        <div className="bar__end">
-          <a className="bar-link" href={blogLink(null)} target="_blank" rel="noopener noreferrer">
-            View blog
-            <IconExternal size={15} />
-          </a>
-          <button type="button" className="bar-link" onClick={() => void signOut()}>
-            Sign out
-          </button>
-        </div>
-      </header>
+      {topBar ?? (
+        <header className="bar">
+          <span className="brand">
+            <IconPen size={17} />
+            Writing desk
+          </span>
+          <div className="bar__end">
+            <a className="bar-link" href={blogLink(null)} target="_blank" rel="noopener noreferrer">
+              View blog
+              <IconExternal size={15} />
+            </a>
+            <button type="button" className="bar-link" onClick={() => void signOut()}>
+              Sign out
+            </button>
+          </div>
+        </header>
+      )}
 
       <main className="list">
         <div className="list__head">
           <h1>Your posts</h1>
-          {posts ? (
+          {posts && posts.length > 0 ? (
             <button type="button" className="btn btn--primary" onClick={newPost}>
               <IconPlus size={17} />
               New post
@@ -318,7 +328,7 @@ export default function Desk({ session, onSignOut }: Props) {
           </ul>
         ) : null}
 
-        <p className="list__foot">Signed in as {session.email}</p>
+        {topBar ? null : <p className="list__foot">Signed in as {session.email}</p>}
       </main>
     </div>
   );

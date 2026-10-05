@@ -108,6 +108,9 @@ export function safeHref(value) {
     raw.replace(/&colon;/gi, ":").replace(/&#0*58;|&#x0*3a;/gi, ":"),
   );
   if (/^(javascript|data|vbscript|file):/i.test(decoded)) return null;
+  if (decoded.startsWith("/")) {
+    return /^\/(?![/\\])[^\s<>"'\\]*$/.test(decoded) ? decoded : null;
+  }
 
   let href = decoded;
   if (/^mailto:/i.test(href)) {
@@ -208,8 +211,10 @@ function cleanNode(node, doc) {
     if (!href) return content;
     const link = doc.createElement("a");
     link.setAttribute("href", href);
-    link.setAttribute("rel", "noopener noreferrer");
-    link.setAttribute("target", "_blank");
+    if (!href.startsWith("/")) {
+      link.setAttribute("rel", "noopener noreferrer");
+      link.setAttribute("target", "_blank");
+    }
     link.appendChild(content);
     return link;
   }

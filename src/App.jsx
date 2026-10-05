@@ -13,6 +13,7 @@ import BlogArticle from './pages/BlogArticle';
 import { BOOK_TITLE, SITE_TITLE_SHORT } from './constants/bookMeta';
 import StickyPlayer from './components/StickyPlayer';
 import { PlayerProvider } from './player/PlayerContext';
+import { PageBoundary } from './content/pageContent';
 import './App.css';
 import './blog.css';
 
@@ -145,6 +146,7 @@ function App() {
         </header>
 
         <main className="main-content" role="main">
+          <PageBoundary key={path}>
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/listenings" element={<Listenings />} />
@@ -158,6 +160,7 @@ function App() {
             <Route path="/blog" element={<BlogHome />} />
             <Route path="/blog/:slug" element={<BlogArticle />} />
           </Routes>
+          </PageBoundary>
         </main>
 
         <footer className="footer" role="contentinfo">

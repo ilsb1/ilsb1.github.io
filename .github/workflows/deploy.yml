@@ -3,6 +3,8 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [ "main" ]
+    # Uploads from the writing app land first; the page publish that follows rebuilds with them.
+    paths-ignore: [ "public/media/**" ]
 
 permissions:
   contents: read

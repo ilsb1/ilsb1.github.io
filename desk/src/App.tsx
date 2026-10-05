@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { clearSession, loadSession, saveSession, type Session } from "./api";
-import Desk from "./Desk";
 import SignIn from "./SignIn";
+import Workspace from "./Workspace";
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(loadSession);
@@ -25,5 +25,5 @@ export default function App() {
       />
     );
   }
-  return <Desk session={session} onSignOut={signOut} />;
+  return <Workspace session={session} onSignOut={signOut} />;
 }

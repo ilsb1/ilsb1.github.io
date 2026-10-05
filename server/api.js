@@ -1,10 +1,14 @@
 import "./dom.js";
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import { isAllowedEmail, normalizeEmail } from "../shared/allowlist.js";
+import { pageById } from "../shared/pages.js";
 import { isPostId } from "../shared/text.js";
 import { signSession, verifySession } from "../shared/session.js";
+import { githubConfigured, githubRawBase } from "./github.js";
 import { mailIsConfigured, sendLoginCode } from "./mail.js";
-import { createRedis, createRedisPosts, createRedisState, redisConfig } from "./redis.js";
+import { createMedia } from "./media.js";
+import { createFilePages, createPageStore } from "./pages.js";
+import { createRedis, createRedisPages, createRedisPosts, createRedisState, redisConfig } from "./redis.js";
 import { createMemoryState } from "./state.js";
 import { createFilePosts, createStore, loadSecret } from "./store.js";
 
@@ -87,6 +91,16 @@ export async function createApi({
   const state = redis ? createRedisState(redis) : createMemoryState();
   const posts = redis ? createRedisPosts(redis) : createFilePosts(root);
   const store = createStore({ root, env, fetchImpl, posts, hosted });
+  const pages = createPageStore({
+    root,
+    env,
+    fetchImpl,
+    hosted,
+    db: redis ? createRedisPages(redis) : createFilePages(root),
+    label: (id) => pageById(id)?.label ?? id,
+  });
+  const media = createMedia({ root, env, fetchImpl, hosted, now });
+  const mediaBase = hosted && githubConfigured(env) ? githubRawBase(env) : "";
   const pause = wait || ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
 
   async function rateLimit(ip, current) {
@@ -225,6 +239,46 @@ export async function createApi({
         const result = await store.remove(postMatch[1], current);
         return { status: 200, json: result };
       }
+
+      const pageMatch = pathname.match(/^\/api\/pages\/([a-z0-9-]{1,40})$/);
+      const pageAction = pathname.match(/^\/api\/pages\/([a-z0-9-]{1,40})\/(publish|discard|reset)$/);
+      if (method === "GET" && pathname === "/api/pages") {
+        requireUser(request, current);
+        return { status: 200, json: { pages: await pages.list(), mediaBase } };
+      }
+      if (method === "GET" && pageMatch) {
+        requireUser(request, current);
+        return { status: 200, json: { page: await pages.get(pageMatch[1]), mediaBase } };
+      }
+      if (method === "PUT" && pageMatch) {
+        requireUser(request, current);
+        return { status: 200, json: { page: await pages.save(pageMatch[1], request.body, current) } };
+      }
+      if (method === "POST" && pageAction?.[2] === "publish") {
+        requireUser(request, current);
+        return { status: 200, json: await pages.publish(pageAction[1], request.body, current) };
+      }
+      if (method === "POST" && pageAction?.[2] === "discard") {
+        requireUser(request, current);
+        return { status: 200, json: { page: await pages.discard(pageAction[1]) } };
+      }
+      if (method === "POST" && pageAction?.[2] === "reset") {
+        requireUser(request, current);
+        return { status: 200, json: await pages.reset(pageAction[1]) };
+      }
+      return { status: 404, json: { error: "not_found" } };
+    } catch (error) {
+      return fail(error);
+    }
+  }
+
+  async function dispatchMedia(request) {
+    try {
+      if (!sameOrigin(request)) return { status: 403, json: { error: "forbidden" } };
+      if (request.method !== "POST") return { status: 404, json: { error: "not_found" } };
+      requireUser(request, now());
+      if (request.pathname === "/api/media") return { status: 200, json: { file: await media.uploadSmall(request.body) } };
+      if (request.pathname === "/api/media/token") return { status: 200, json: await media.blobToken(request.body) };
       return { status: 404, json: { error: "not_found" } };
     } catch (error) {
       return fail(error);
@@ -233,6 +287,7 @@ export async function createApi({
 
   let chain = Promise.resolve();
   function handle(request) {
+    if (request.pathname === "/api/media" || request.pathname.startsWith("/api/media/")) return dispatchMedia(request);
     const run = chain.then(() => dispatch(request));
     chain = run.then(
       () => {},
@@ -241,5 +296,9 @@ export async function createApi({
     return run;
   }
 
-  return { handle, secret };
+  function userFromHeader(header) {
+    return verifySession(bearer(header), secret, now());
+  }
+
+  return { handle, secret, media, userFromHeader };
 }

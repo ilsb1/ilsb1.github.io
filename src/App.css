@@ -1287,6 +1287,70 @@ body.player-visible .main-content {
   margin-bottom: 0;
 }
 
+/* The biography as edited in the writing app: same look as the sections above. */
+.author-bio.author-bio--rich > p {
+  font-size: 1.03125rem;
+  line-height: 1.78;
+  color: var(--text-dark);
+  margin: 0;
+}
+
+.author-bio.author-bio--rich > p + p {
+  margin-top: 0.75rem;
+}
+
+.author-bio.author-bio--rich > h2,
+.author-bio.author-bio--rich > h3 {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: inherit;
+  text-transform: uppercase;
+  color: var(--cover-navy);
+  margin: 1.5rem 0 0.75rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 2px solid rgba(228, 89, 42, 0.4);
+}
+
+.author-bio.author-bio--rich > :first-child {
+  margin-top: 0;
+}
+
+.author-bio.author-bio--rich > ul,
+.author-bio.author-bio--rich > ol {
+  margin: 0;
+  padding: 0 0 0 1.35rem;
+  font-size: 1.03125rem;
+  line-height: 1.65;
+  color: var(--text-dark);
+}
+
+.author-bio.author-bio--rich > * + ul,
+.author-bio.author-bio--rich > * + ol {
+  margin-top: 0.75rem;
+}
+
+.author-bio.author-bio--rich > h2 + ul,
+.author-bio.author-bio--rich > h3 + ul,
+.author-bio.author-bio--rich > h2 + ol,
+.author-bio.author-bio--rich > h3 + ol {
+  margin-top: 0;
+}
+
+.author-bio.author-bio--rich li {
+  margin-bottom: 0.4rem;
+  padding-left: 0.25rem;
+}
+
+.author-bio.author-bio--rich li:last-child {
+  margin-bottom: 0;
+}
+
+.page-blocks.page-blocks--in-card {
+  max-width: 100%;
+  margin-top: 2.25rem;
+}
+
 .about-text-block {
   text-align: left;
   margin-top: 1.75rem;
@@ -2068,7 +2132,9 @@ body.player-visible .main-content {
     min-width: 0;
   }
 
-  .author-bio__heading {
+  .author-bio__heading,
+  .author-bio.author-bio--rich > h2,
+  .author-bio.author-bio--rich > h3 {
     letter-spacing: 0.08em;
   }
 

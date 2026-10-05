@@ -50,6 +50,8 @@ function fakeUpstash() {
         return 1;
       case "HGETALL":
         return [...(hashes.get(args[0]) ?? new Map())].flat();
+      case "HGET":
+        return hashes.get(args[0])?.get(args[1]) ?? null;
       case "HSET": {
         const hash = hashes.get(args[0]) ?? new Map();
         hash.set(args[1], args[2]);

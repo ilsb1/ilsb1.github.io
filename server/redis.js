@@ -1,4 +1,5 @@
 const POSTS_KEY = "desk:posts";
+const PAGES_KEY = "desk:pages";
 
 function storageFailed() {
   const error = new Error("storage_failed");
@@ -107,6 +108,39 @@ export function createRedisPosts(redis) {
     },
     async remove(id) {
       await redis.run("HDEL", POSTS_KEY, id);
+    },
+  };
+}
+
+function parseRecord(raw) {
+  if (typeof raw !== "string") return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+export function createRedisPages(redis) {
+  return {
+    async all() {
+      const flat = await redis.run("HGETALL", PAGES_KEY);
+      const records = [];
+      if (!Array.isArray(flat)) return records;
+      for (let i = 1; i < flat.length; i += 2) {
+        const record = parseRecord(flat[i]);
+        if (record) records.push(record);
+      }
+      return records;
+    },
+    async get(id) {
+      return parseRecord(await redis.run("HGET", PAGES_KEY, id));
+    },
+    async put(record) {
+      await redis.run("HSET", PAGES_KEY, record.id, JSON.stringify(record));
+    },
+    async remove(id) {
+      await redis.run("HDEL", PAGES_KEY, id);
     },
   };
 }

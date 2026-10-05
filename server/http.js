@@ -18,14 +18,21 @@ function headerMap(req) {
   return headers;
 }
 
-function readBody(req) {
+/** Photos and documents up to 3 MB arrive base64-encoded, just under Vercel's 4.5 MB request cap. */
+export function bodyLimit(pathname) {
+  if (pathname === "/api/media") return 4_500_000;
+  if (pathname.startsWith("/api/pages/")) return 1_200_000;
+  return 350_000;
+}
+
+function readBody(req, limit) {
   return new Promise((resolve, reject) => {
     const chunks = [];
     let size = 0;
     req.on("data", (data) => {
       const chunk = typeof data === "string" ? Buffer.from(data) : data;
       size += chunk.length;
-      if (size > 350_000) {
+      if (size > limit) {
         const error = new Error("too_large");
         error.status = 413;
         error.code = "too_large";
@@ -57,7 +64,7 @@ export async function serveApi(req, res, getApi, { behindProxy = false } = {}) {
     const pathname = (req.url || "").split("?")[0];
     let body = null;
     if (method === "POST" || method === "PUT" || method === "DELETE") {
-      const raw = await readBody(req);
+      const raw = await readBody(req, bodyLimit(pathname));
       if (raw) {
         const type = String(req.headers["content-type"] || "");
         if (!type.includes("application/json")) {

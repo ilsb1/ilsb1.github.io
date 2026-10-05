@@ -1,5 +1,7 @@
 import React from "react";
 import { Link, useParams } from "react-router-dom";
+import { usePage } from "../content/pageContent";
+import SiteBlocks from "../content/SiteBlocks";
 import { unitScripts } from "../data/listeningScripts";
 import { getDisplayUnitNumber } from "../data/listenings";
 
@@ -8,6 +10,7 @@ export default function ScriptUnit() {
   const unitNum = Number(unitId);
   const displayUnitNum = getDisplayUnitNumber(unitNum);
   const script = unitScripts[unitNum];
+  const page = usePage(`script-${unitNum}`);
 
   if (!script) {
     return (
@@ -29,8 +32,8 @@ export default function ScriptUnit() {
       </Link>
 
       <header className="page-header script-page-header">
-        <h2 className="page-title">Unit {displayUnitNum}</h2>
-        <p className="page-subtitle script-title">{script.title}</p>
+        <h2 className="page-title">{page.text("title") || `Unit ${displayUnitNum}`}</h2>
+        {page.text("subtitle") ? <p className="page-subtitle script-title">{page.text("subtitle")}</p> : null}
       </header>
 
       <section className="script-track-links" aria-label="Related listening tracks">
@@ -73,6 +76,8 @@ export default function ScriptUnit() {
           );
         })}
       </article>
+
+      <SiteBlocks blocks={page.blocks} />
     </div>
   );
 }
