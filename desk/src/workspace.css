@@ -2099,6 +2099,45 @@ a.row {
   border-radius: 14px;
 }
 
+.pv-sk-col {
+  display: grid;
+  justify-items: start;
+  gap: 0.9rem;
+  width: min(42rem, calc(100% - 2.5rem));
+}
+
+.pv-sk--meta {
+  width: 9rem;
+  height: 0.7rem;
+  margin-top: 1.25rem;
+}
+
+.pv-sk-col .pv-sk--title {
+  width: 90%;
+  height: 2.6rem;
+}
+
+.pv-sk-col .pv-sk--sub {
+  width: 62%;
+  height: 1.1rem;
+  margin-bottom: 0;
+}
+
+.pv-sk--byline {
+  width: 13rem;
+  height: 2.75rem;
+  margin: 0.9rem 0 1.4rem;
+  border-radius: 999px;
+}
+
+.pv-sk-col .pv-sk--line {
+  width: 100%;
+}
+
+.pv-sk-col .pv-sk--short {
+  width: 68%;
+}
+
 @keyframes pv-shimmer {
   from {
     background-position: 100% 0;
@@ -2308,7 +2347,7 @@ a.row {
     padding: 0 0.9rem;
   }
 
-  .bar--editor .btn--preview {
+  .bar .btn--preview {
     width: 2.5rem;
     margin-right: 0;
     padding: 0;

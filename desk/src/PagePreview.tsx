@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { BLOG_URL, type PageContent, type PageStatus } from "./api";
+import { BLOG_URL, type PageStatus } from "./api";
 import { Segmented } from "./BlockCards";
 import { IconAlert, IconArrowLeft, IconLaptop, IconLock, IconPhone, IconRefresh } from "./icons";
-import type { PageDef } from "./pageModel";
 
-export type PreviewScroll = "top" | "blocks";
+/** "top", a page's added elements, or a point in a post's text (0 to 1). */
+export type PreviewScroll = "top" | "blocks" | number;
 type Device = "laptop" | "phone";
 type Failure = "offline" | "updating" | "slow";
 
@@ -57,10 +57,14 @@ type Props = {
   open: boolean;
   /** Start loading the website in the background so opening feels instant. */
   warm: boolean;
-  page: PageDef;
-  content: PageContent;
+  kind: "page" | "post";
+  id: string;
+  label: string;
+  /** Where it is (or will be) on the website. */
+  path: string;
+  content: unknown;
   contentKey: string;
-  mediaBase: string;
+  mediaBase?: string;
   scroll: PreviewScroll;
   status: PageStatus;
   action: ReactNode;
@@ -69,10 +73,11 @@ type Props = {
 };
 
 /**
- * Shows the real website page with the unpublished content, drawn by the
- * website itself so it looks exactly like it will after publishing.
+ * Shows the real website page or blog post with the unpublished content, drawn
+ * by the website itself so it looks exactly like it will after publishing.
  */
-export default function PagePreview({ open, warm, page, content, contentKey, mediaBase, scroll, status, action, notes, onClose }: Props) {
+export default function PagePreview(props: Props) {
+  const { open, warm, kind, id, label, path, content, contentKey, mediaBase = "", scroll, status, action, notes, onClose } = props;
   const dialogRef = useRef<HTMLDialogElement>(null);
   const frameRef = useRef<HTMLIFrameElement>(null);
   const roomy = useMedia("(min-width: 720px)");
@@ -84,6 +89,7 @@ export default function PagePreview({ open, warm, page, content, contentKey, med
   const [failure, setFailure] = useState<Failure | null>(null);
   const [fallback, setFallback] = useState(false);
   const [notice, setNotice] = useState({ text: "", on: false });
+  const [framePath, setFramePath] = useState(path);
 
   const siteReady = useRef(false);
   const loaded = useRef(false);
@@ -94,10 +100,10 @@ export default function PagePreview({ open, warm, page, content, contentKey, med
   const waitFor = useRef(0);
   const closing = useRef(0);
   const noticeTimer = useRef(0);
-  const latest = useRef({ id: page.id, content, contentKey, mediaBase, open, scroll, shownKey, waiting, failure, attempt, onClose });
+  const latest = useRef({ kind, id, path, content, contentKey, mediaBase, open, scroll, shownKey, waiting, failure, attempt, onClose });
 
   useLayoutEffect(() => {
-    latest.current = { id: page.id, content, contentKey, mediaBase, open, scroll, shownKey, waiting, failure, attempt, onClose };
+    latest.current = { kind, id, path, content, contentKey, mediaBase, open, scroll, shownKey, waiting, failure, attempt, onClose };
   });
 
   useEffect(() => {
@@ -107,13 +113,13 @@ export default function PagePreview({ open, warm, page, content, contentKey, med
   const send = useCallback((scrollTo: PreviewScroll | null) => {
     const target = frameRef.current?.contentWindow;
     if (!target || !siteReady.current) return;
-    const { id, content: sending, contentKey: key, mediaBase: base } = latest.current;
+    const { kind: type, id: sendingId, content: sending, contentKey: key, mediaBase: base } = latest.current;
     seq.current += 1;
     sent.current.set(seq.current, key);
     lastSent.current = key;
-    if (scrollTo) waitFor.current = seq.current;
+    if (scrollTo !== null) waitFor.current = seq.current;
     target.postMessage(
-      { source: "ils-desk", type: "page", id, seq: seq.current, content: sending, mediaBase: base, scroll: scrollTo },
+      { source: "ils-desk", type, id: sendingId, seq: seq.current, content: sending, mediaBase: base, scroll: scrollTo },
       SITE_ORIGIN,
     );
   }, []);
@@ -134,6 +140,7 @@ export default function PagePreview({ open, warm, page, content, contentKey, med
     setWaiting(true);
     setFailure(null);
     setFallback(false);
+    setFramePath(latest.current.path);
     setAttempt((value) => value + 1);
   }, []);
 
@@ -259,7 +266,7 @@ export default function PagePreview({ open, warm, page, content, contentKey, med
 
   const layout = roomy ? device : "compact";
   const visible = shownKey !== null && !waiting && !failure;
-  const address = `${SITE_HOST}${page.path === "/" ? "" : page.path}`;
+  const address = `${SITE_HOST}${path === "/" ? "" : path}`;
   const lines = fallback
     ? [...notes, "Part of this page couldn't be shown, so the website would show the original instead. Try undoing your last change."]
     : notes;
@@ -268,7 +275,7 @@ export default function PagePreview({ open, warm, page, content, contentKey, med
     <dialog
       ref={dialogRef}
       className={`pv pv--${layout}`}
-      aria-label={`Preview of ${page.label}`}
+      aria-label={`Preview of ${label}`}
       onCancel={(event) => {
         event.preventDefault();
         onClose();
@@ -288,7 +295,7 @@ export default function PagePreview({ open, warm, page, content, contentKey, med
         {roomy ? (
           <div className="pv-bar__mid">
             <Segmented
-              label="Show the page as on a"
+              label={kind === "post" ? "Show the post as on a" : "Show the page as on a"}
               value={device}
               options={[
                 { value: "laptop", label: "Laptop", icon: <IconLaptop size={16} /> },
@@ -333,13 +340,13 @@ export default function PagePreview({ open, warm, page, content, contentKey, med
                 key={attempt}
                 ref={frameRef}
                 className={visible ? "is-shown" : undefined}
-                src={frameSrc(page.path)}
-                title={`${page.label} as it will look on the website`}
+                src={frameSrc(framePath)}
+                title={`${label} as it will look on the website`}
                 allow="accelerometer; autoplay; clipboard-write; compute-pressure; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share"
                 onLoad={onFrameLoad}
               />
             ) : null}
-            <PreviewSkeleton hidden={visible || Boolean(failure)} />
+            <PreviewSkeleton kind={kind} hidden={visible || Boolean(failure)} />
             {failure ? (
               <div className="pv-failed" role="alert">
                 <IconAlert size={26} />
@@ -363,15 +370,29 @@ export default function PagePreview({ open, warm, page, content, contentKey, med
   );
 }
 
-function PreviewSkeleton({ hidden }: { hidden: boolean }) {
+function PreviewSkeleton({ kind, hidden }: { kind: Props["kind"]; hidden: boolean }) {
   return (
     <div className={`pv-skeleton${hidden ? " is-hidden" : ""}`} role="status" aria-label={hidden ? undefined : "Loading the preview"}>
       <span className="pv-sk pv-sk--header" />
-      <span className="pv-sk pv-sk--title" />
-      <span className="pv-sk pv-sk--sub" />
-      <span className="pv-sk pv-sk--line" />
-      <span className="pv-sk pv-sk--line pv-sk--short" />
-      <span className="pv-sk pv-sk--card" />
+      {kind === "post" ? (
+        <span className="pv-sk-col">
+          <span className="pv-sk pv-sk--meta" />
+          <span className="pv-sk pv-sk--title" />
+          <span className="pv-sk pv-sk--sub" />
+          <span className="pv-sk pv-sk--byline" />
+          <span className="pv-sk pv-sk--line" />
+          <span className="pv-sk pv-sk--line" />
+          <span className="pv-sk pv-sk--line pv-sk--short" />
+        </span>
+      ) : (
+        <>
+          <span className="pv-sk pv-sk--title" />
+          <span className="pv-sk pv-sk--sub" />
+          <span className="pv-sk pv-sk--line" />
+          <span className="pv-sk pv-sk--line pv-sk--short" />
+          <span className="pv-sk pv-sk--card" />
+        </>
+      )}
     </div>
   );
 }

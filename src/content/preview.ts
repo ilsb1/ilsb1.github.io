@@ -1,22 +1,30 @@
+import { useSyncExternalStore } from "react";
 import { normalizePage } from "../../shared/content.js";
+import { previewArticle } from "../../shared/posts.js";
+import { isSlug } from "../../shared/text.js";
+import type { PublicArticle } from "../blog/posts";
 import type { Block } from "./types";
 
 /**
  * Preview mode: the writing desk shows this site in a frame and sends the
- * page's unpublished content, which is cleaned exactly like a published page
+ * unpublished page or blog post, which is cleaned exactly like a published
  * file and drawn by the same components.
  */
 
 export type PreviewPage = { id: string; seq: number; fields: Record<string, unknown>; blocks: Block[] };
+export type PreviewPost = { seq: number; article: PublicArticle };
+
+/** "top", the page's added elements, or a point in a post's text (0 to 1). */
+type Scroll = "top" | "blocks" | number;
 
 type DeskMessage = {
   source: "ils-desk";
-  type: "page";
+  type: "page" | "post";
   id: string;
   seq: number;
   content: unknown;
   mediaBase?: unknown;
-  scroll?: "top" | "blocks" | null;
+  scroll?: Scroll | null;
 };
 
 const DESK_ORIGINS = ["https://ilsb1.vercel.app"];
@@ -27,6 +35,7 @@ export const isPreview =
   typeof window !== "undefined" && window.parent !== window && new URLSearchParams(window.location.search).has("preview");
 
 let current: PreviewPage | null = null;
+let currentPost: PreviewPost | null = null;
 let failures = 0;
 const listeners = new Set<() => void>();
 
@@ -38,6 +47,13 @@ export function subscribePreview(listener: () => void) {
 }
 
 export const previewPage = () => current;
+const previewPost = () => currentPost;
+const noPost = () => null;
+
+/** The unpublished post the writing desk is showing, if any. */
+export function usePreviewPost() {
+  return useSyncExternalStore(subscribePreview, previewPost, noPost);
+}
 
 let deskOrigin = "";
 
@@ -83,15 +99,24 @@ function afterPaint() {
   return Promise.race([painted, wait(150)]);
 }
 
-async function mounted() {
-  for (let tries = 0; tries < 40 && !document.querySelector(".main-content"); tries += 1) await wait(50);
+async function mounted(selector: string) {
+  for (let tries = 0; tries < 40 && !document.querySelector(selector); tries += 1) await wait(50);
 }
 
 function fontsReady() {
   return Promise.race([document.fonts?.ready ?? Promise.resolve(), wait(1500)]);
 }
 
-function scrollPage(target: "top" | "blocks") {
+function scrollPage(target: Scroll) {
+  if (typeof target === "number") {
+    const body = document.querySelector<HTMLElement>(".post__body");
+    if (body) {
+      const rect = body.getBoundingClientRect();
+      const at = Math.min(1, Math.max(0, target));
+      window.scrollTo({ top: Math.max(0, rect.top + window.scrollY + at * rect.height - window.innerHeight / 3), behavior: "instant" });
+      return;
+    }
+  }
   const blocks = target === "blocks" ? document.querySelector<HTMLElement>(".main-content .page-blocks") : null;
   if (!blocks) {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -101,23 +126,46 @@ function scrollPage(target: "top" | "blocks") {
   window.scrollTo({ top: Math.max(0, blocks.getBoundingClientRect().top + window.scrollY - header - 24), behavior: "instant" });
 }
 
+function validScroll(value: unknown): Scroll | null {
+  if (value === "top" || value === "blocks") return value;
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function showPost(data: DeskMessage) {
+  const input = data.content && typeof data.content === "object" ? (data.content as { slug?: unknown; publishedAt?: unknown }) : null;
+  if (!input) return false;
+  const slug = typeof input.slug === "string" && isSlug(input.slug) ? input.slug : "";
+  const article = previewArticle(slug, input, input.publishedAt, new Date().toISOString()) as PublicArticle | null;
+  if (!article) return false;
+  currentPost = { seq: data.seq, article };
+  return true;
+}
+
 function onMessage(event: MessageEvent) {
   if (event.source !== window.parent || !trusted(event.origin)) return;
   const data = event.data as DeskMessage | null;
-  if (!data || data.source !== "ils-desk" || data.type !== "page" || typeof data.id !== "string" || typeof data.seq !== "number") return;
-  const clean = normalizePage(data.id, data.content) as { fields: Record<string, unknown>; blocks: Block[] } | null;
-  if (!clean) return;
+  if (!data || data.source !== "ils-desk" || typeof data.id !== "string" || typeof data.seq !== "number") return;
+  if (data.type === "post") {
+    if (!showPost(data)) return;
+  } else if (data.type === "page") {
+    const clean = normalizePage(data.id, data.content) as { fields: Record<string, unknown>; blocks: Block[] } | null;
+    if (!clean) return;
+    const base = typeof data.mediaBase === "string" && RAW_BASE.test(data.mediaBase) ? data.mediaBase : "";
+    current = { id: data.id, seq: data.seq, ...rebase(clean, base) };
+  } else {
+    return;
+  }
   deskOrigin = event.origin;
-  const base = typeof data.mediaBase === "string" && RAW_BASE.test(data.mediaBase) ? data.mediaBase : "";
-  current = { id: data.id, seq: data.seq, ...rebase(clean, base) };
   const seen = failures;
   listeners.forEach((listener) => listener());
   const first = !document.documentElement.dataset.previewShown;
+  const scroll = validScroll(data.scroll);
   void (async () => {
-    await mounted();
+    // a post article stays aria-busy until "More writing" below it has loaded
+    await mounted(data.type === "post" ? ".blog--article:not([aria-busy]) .post__header" : ".main-content");
     await afterPaint();
     if (first) await fontsReady();
-    if (data.scroll) scrollPage(data.scroll);
+    if (scroll !== null) scrollPage(scroll);
     document.documentElement.dataset.previewShown = "1";
     tellDesk({ type: "rendered", id: data.id, seq: data.seq, fallback: failures > seen });
   })();

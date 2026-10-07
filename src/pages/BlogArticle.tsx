@@ -5,32 +5,43 @@ import { formatDate, readingMinutes } from "../../shared/text.js";
 import { loadPublicArticle, loadPublicList, type PublicArticle, type PublicListing } from "../blog/posts";
 import ArticleView, { authorPhoto } from "../components/ArticleView";
 import { IconArrowLeft, IconArrowRight, IconCheck, IconLink, IconShare } from "../components/icons";
+import { isPreview, usePreviewPost } from "../content/preview";
 
 export default function BlogArticle() {
   const { slug = "" } = useParams();
-  const [article, setArticle] = useState<PublicArticle | null | undefined>(undefined);
-  const [others, setOthers] = useState<PublicListing[]>([]);
+  const preview = usePreviewPost();
+  const [loaded, setLoaded] = useState<PublicArticle | null | undefined>(undefined);
+  const [list, setList] = useState<PublicListing[] | null>(null);
 
   useEffect(() => {
     let cancel = false;
-    setArticle(undefined);
+    setLoaded(undefined);
+    setList(null);
     window.scrollTo(0, 0);
-    loadPublicArticle(slug)
+    if (!isPreview) {
+      loadPublicArticle(slug)
+        .then((next) => {
+          if (!cancel) setLoaded(next);
+        })
+        .catch(() => {
+          if (!cancel) setLoaded(null);
+        });
+    }
+    loadPublicList()
       .then((next) => {
-        if (!cancel) setArticle(next);
+        if (!cancel) setList(next);
       })
       .catch(() => {
-        if (!cancel) setArticle(null);
+        if (!cancel) setList([]);
       });
-    loadPublicList()
-      .then((list) => {
-        if (!cancel) setOthers(list.filter((post) => post.slug !== slug).slice(0, 2));
-      })
-      .catch(() => {});
     return () => {
       cancel = true;
     };
   }, [slug]);
+
+  const article = isPreview ? preview?.article : loaded;
+  const shownSlug = article?.slug || slug;
+  const others = (list ?? []).filter((post) => post.slug !== shownSlug).slice(0, 2);
 
   useEffect(() => {
     const previous = document.title;
@@ -59,7 +70,7 @@ export default function BlogArticle() {
   }
 
   return (
-    <div className="blog blog--article">
+    <div className="blog blog--article" aria-busy={list === null || undefined}>
       <ReadingProgress />
       <ArticleView
         title={article.title}

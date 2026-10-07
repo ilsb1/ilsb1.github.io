@@ -1,4 +1,5 @@
-import { isSlug, wordCount } from "../../shared/text.js";
+import { readArticle } from "../../shared/posts.js";
+import { isSlug } from "../../shared/text.js";
 
 export type PublicListing = {
   slug: string;
@@ -67,17 +68,7 @@ export async function loadPublicList(): Promise<PublicListing[]> {
 export async function loadPublicArticle(slug: string): Promise<PublicArticle | null> {
   if (!isSlug(slug)) return null;
   try {
-    const data = (await fetchJson(`/blogs/${slug}.json`)) as Partial<PublicArticle> | null;
-    if (!data || typeof data.title !== "string" || typeof data.html !== "string") return null;
-    return {
-      slug,
-      title: data.title,
-      subtitle: text(data.subtitle),
-      html: data.html,
-      words: numberOr(data.words, wordCount(data.html)),
-      publishedAt: text(data.publishedAt),
-      updatedAt: text(data.updatedAt),
-    };
+    return readArticle(slug, await fetchJson(`/blogs/${slug}.json`));
   } catch {
     return null;
   }

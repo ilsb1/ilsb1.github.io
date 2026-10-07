@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { formatDate } from "../../shared/text.js";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { TITLE_MAX, uniqueSlug } from "../../shared/posts.js";
+import { formatDate, plainField, wordCount } from "../../shared/text.js";
 import {
   ApiError,
   blankPost,
@@ -15,13 +16,15 @@ import {
   publishPost,
   savePost,
   unpublishPost,
+  type PageStatus,
   type Post,
   type PublishResult,
   type Session,
 } from "./api";
 import Dialog from "./Dialog";
 import Editor, { type EditorHandle } from "./Editor";
-import { IconArrowLeft, IconCheck, IconExternal, IconPen, IconPlus } from "./icons";
+import { IconArrowLeft, IconCheck, IconExternal, IconEye, IconPen, IconPlus } from "./icons";
+import PagePreview, { type PreviewScroll } from "./PagePreview";
 
 type SaveState = "saved" | "saving" | "error";
 
@@ -240,6 +243,7 @@ export default function Desk({ session, onSignOut, topBar }: Props) {
       <PostScreen
         key={open.id}
         post={open}
+        slug={open.slug ?? uniqueSlug(plainField(open.title, TITLE_MAX), posts ?? [], open.id)}
         saveState={saveState}
         onEdit={(changes) => edit(open.id, changes)}
         onBack={backToList}
@@ -350,6 +354,8 @@ type PublishStep = { step: "closed" } | { step: "confirm"; error: string } | { s
 
 type PostScreenProps = {
   post: Post;
+  /** Its address on the blog, or the one it will get when it's first published. */
+  slug: string;
   saveState: SaveState;
   onEdit: (changes: Partial<Pick<Post, "title" | "subtitle" | "html">>) => void;
   onBack: () => void;
@@ -358,7 +364,7 @@ type PostScreenProps = {
   onDelete: () => Promise<string>;
 };
 
-function PostScreen({ post, saveState, onEdit, onBack, onPublish, onUnpublish, onDelete }: PostScreenProps) {
+function PostScreen({ post, slug, saveState, onEdit, onBack, onPublish, onUnpublish, onDelete }: PostScreenProps) {
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const subtitleRef = useRef<HTMLTextAreaElement>(null);
   const editorRef = useRef<EditorHandle>(null);
@@ -367,8 +373,34 @@ function PostScreen({ post, saveState, onEdit, onBack, onPublish, onUnpublish, o
   const [confirmError, setConfirmError] = useState("");
   const [busy, setBusy] = useState(false);
   const [startsBlank] = useState(() => isBlank(post));
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewWarm, setPreviewWarm] = useState(false);
+  const [previewScroll, setPreviewScroll] = useState<PreviewScroll>("top");
 
   const changed = hasUnpublishedEdits(post);
+  const publishedAt = post.live?.publishedAt ?? null;
+  const previewContent = useMemo(
+    () => ({ slug, title: post.title, subtitle: post.subtitle, html: post.html, publishedAt }),
+    [slug, post.title, post.subtitle, post.html, publishedAt],
+  );
+  const previewKey = useMemo(() => JSON.stringify(previewContent), [previewContent]);
+
+  useEffect(() => {
+    if (!window.matchMedia("(min-width: 1080px)").matches) return;
+    const timer = window.setTimeout(() => setPreviewWarm(true), 2500);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const warmPreview = () => setPreviewWarm(true);
+
+  function openPreview() {
+    const rect = document.querySelector(".page__body")?.getBoundingClientRect();
+    const at = rect && rect.height > 0 ? (window.innerHeight / 3 - rect.top) / rect.height : 0;
+    setPreviewScroll(at > 0.02 ? Math.min(1, at) : "top");
+    setPublishing({ step: "closed" });
+    setPreviewWarm(true);
+    setPreviewOpen(true);
+  }
 
   useLayoutEffect(() => {
     fit(titleRef.current);
@@ -399,6 +431,37 @@ function PostScreen({ post, saveState, onEdit, onBack, onPublish, onUnpublish, o
   }
 
   const saveLabel = saveState === "saving" ? "Saving…" : saveState === "error" ? "Not saved – check your internet" : "Saved";
+  const upToDate = Boolean(post.live) && !changed;
+  const previewStatus: PageStatus = upToDate ? "published" : "changed";
+
+  const publishControl = upToDate ? (
+    <span className="published">
+      <IconCheck size={16} />
+      Published
+    </span>
+  ) : (
+    <button
+      type="button"
+      className="btn btn--primary"
+      onPointerEnter={warmPreview}
+      onClick={() => setPublishing({ step: "confirm", error: "" })}
+    >
+      {post.live ? "Publish changes" : "Publish"}
+    </button>
+  );
+
+  const missingTitle = !plainField(post.title, TITLE_MAX);
+  const missingText = wordCount(post.html) === 0;
+  const previewNotes =
+    missingTitle || missingText
+      ? [
+          missingTitle && missingText
+            ? "Add a title and some writing before you publish."
+            : missingTitle
+              ? "Add a title before you publish."
+              : "Write something before you publish.",
+        ]
+      : [];
 
   return (
     <div className="screen">
@@ -411,16 +474,19 @@ function PostScreen({ post, saveState, onEdit, onBack, onPublish, onUnpublish, o
           {saveLabel}
         </span>
         <div className="bar__end">
-          {post.live && !changed ? (
-            <span className="published">
-              <IconCheck size={16} />
-              Published
-            </span>
-          ) : (
-            <button type="button" className="btn btn--primary" onClick={() => setPublishing({ step: "confirm", error: "" })}>
-              {post.live ? "Publish changes" : "Publish"}
-            </button>
-          )}
+          <button
+            type="button"
+            className="btn btn--ghost btn--preview"
+            aria-label="Preview the post"
+            onClick={openPreview}
+            onPointerEnter={warmPreview}
+            onFocus={warmPreview}
+            onTouchStart={warmPreview}
+          >
+            <IconEye size={18} />
+            <span>Preview</span>
+          </button>
+          {publishControl}
         </div>
       </header>
 
@@ -493,6 +559,22 @@ function PostScreen({ post, saveState, onEdit, onBack, onPublish, onUnpublish, o
         }
       />
 
+      <PagePreview
+        open={previewOpen}
+        warm={previewWarm}
+        kind="post"
+        id={post.id}
+        label={plainField(post.title, TITLE_MAX) || "Untitled post"}
+        path={`/blog/${slug}`}
+        content={previewContent}
+        contentKey={previewKey}
+        scroll={previewScroll}
+        status={previewStatus}
+        action={upToDate ? null : publishControl}
+        notes={previewNotes}
+        onClose={() => setPreviewOpen(false)}
+      />
+
       <Dialog
         open={publishing.step !== "closed"}
         title={publishTitle(publishing, post)}
@@ -504,6 +586,12 @@ function PostScreen({ post, saveState, onEdit, onBack, onPublish, onUnpublish, o
               <p>It will appear on the blog for everyone to read, usually within two minutes.</p>
               {publishing.step === "confirm" && publishing.error ? <p className="error">{publishing.error}</p> : null}
               <div className="dialog__actions">
+                {!previewOpen ? (
+                  <button type="button" className="btn-text dialog__aside" disabled={publishing.step === "working"} onClick={openPreview}>
+                    <IconEye size={16} />
+                    See a preview first
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   className="btn btn--ghost"

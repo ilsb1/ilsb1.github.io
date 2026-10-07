@@ -1,20 +1,10 @@
 import { randomBytes } from "node:crypto";
 import { mkdir, readFile, rename, writeFile, rm } from "node:fs/promises";
 import path from "node:path";
-import { sanitizeHtml } from "../shared/sanitize.js";
-import {
-  excerptFromHtml,
-  htmlToPlain,
-  isPostId,
-  isSlug,
-  plainField,
-  slugify,
-  wordCount,
-} from "../shared/text.js";
+import { articleFile, cleanPost, uniqueSlug } from "../shared/posts.js";
+import { excerptFromHtml, htmlToPlain, isPostId, isSlug, wordCount } from "../shared/text.js";
 import { commitToGithub, githubConfigured } from "./github.js";
 
-const TITLE_MAX = 180;
-const SUBTITLE_MAX = 240;
 const MAX_POSTS = 200;
 
 function postsFile(root) {
@@ -103,15 +93,7 @@ function toClient(post) {
 }
 
 function articleJson(post) {
-  return {
-    slug: post.slug,
-    title: post.live.title,
-    subtitle: post.live.subtitle,
-    html: post.live.html,
-    words: wordCount(post.live.html),
-    publishedAt: post.live.publishedAt,
-    updatedAt: post.live.updatedAt,
-  };
+  return articleFile(post.slug, post.live);
 }
 
 function indexEntry(post) {
@@ -162,15 +144,6 @@ async function writePublic(root, posts, { changedSlug = null, removedSlug = null
   return { files, deletions };
 }
 
-function uniqueSlug(title, posts, selfId) {
-  const base = slugify(title);
-  const taken = new Set(posts.filter((post) => post.id !== selfId && post.slug).map((post) => post.slug));
-  if (!taken.has(base)) return base;
-  let n = 2;
-  while (taken.has(`${base.slice(0, 56)}-${n}`)) n += 1;
-  return `${base.slice(0, 56)}-${n}`;
-}
-
 function failure(status, code) {
   const error = new Error(code);
   error.status = status;
@@ -181,11 +154,7 @@ function failure(status, code) {
 function cleanInput(body) {
   if (!body || typeof body !== "object") throw failure(400, "bad_body");
   if (String(body.html ?? "").length > 200_000) throw failure(413, "too_large");
-  return {
-    title: plainField(body.title, TITLE_MAX),
-    subtitle: plainField(body.subtitle, SUBTITLE_MAX),
-    html: sanitizeHtml(body.html),
-  };
+  return cleanPost(body);
 }
 
 function requireText(cleaned) {

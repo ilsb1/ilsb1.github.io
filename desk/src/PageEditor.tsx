@@ -1283,7 +1283,10 @@ function Workbench({
       <PagePreview
         open={previewOpen}
         warm={previewWarm}
-        page={page}
+        kind="page"
+        id={page.id}
+        label={page.label}
+        path={page.path}
         content={content}
         contentKey={contentKey}
         mediaBase={mediaBase}
