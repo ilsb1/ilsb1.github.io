@@ -48,6 +48,13 @@ function storedName(name, ext, now) {
   return { folder: `${year}/${month}`, file: `${randomBytes(4).toString("hex")}-${base}.${ext}` };
 }
 
+/** A Blob store connected with a custom prefix names its token <PREFIX>_READ_WRITE_TOKEN. */
+export function blobReadWriteToken(env) {
+  if (env.BLOB_READ_WRITE_TOKEN) return env.BLOB_READ_WRITE_TOKEN;
+  const key = Object.keys(env).find((name) => name.endsWith("_READ_WRITE_TOKEN") && String(env[name]).startsWith("vercel_blob_rw_"));
+  return key ? env[key] : "";
+}
+
 function describe(name) {
   const clean = plainField(name, 200);
   const ext = fileExtension(clean);
@@ -109,7 +116,7 @@ export function createMedia({ root, env, fetchImpl, hosted = false, now = () => 
     if (!Number.isFinite(size) || size <= 0) throw failure(400, "empty_file");
     if (size > UPLOAD_KINDS[kind].maxBytes) throw failure(413, "too_large");
 
-    const token = env.BLOB_READ_WRITE_TOKEN || "";
+    const token = blobReadWriteToken(env);
     if (!token) {
       if (hosted) throw failure(503, "uploads_not_configured");
       return { local: true };

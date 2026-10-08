@@ -226,3 +226,16 @@ test("hands out a one-file Blob upload permission for large files", async () => 
     await cleanup();
   }
 });
+
+test("finds the Blob token when the store was connected with its own prefix", async () => {
+  const { call, token, cleanup } = await setup({
+    env: { OTHER_READ_WRITE_TOKEN: "not-a-blob-token", B_READ_WRITE_TOKEN: "vercel_blob_rw_store456_secretpart" },
+  });
+  try {
+    const granted = await call("POST", "/api/media/token", { token, body: { name: "talk.mp4", size: 50_000_000 } });
+    assert.equal(granted.status, 200);
+    assert.match(granted.json.token, /^vercel_blob_client_store456_/);
+  } finally {
+    await cleanup();
+  }
+});
