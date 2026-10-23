@@ -1,3 +1,4 @@
+import "../security/node-trust-guard.cjs";
 import { createApi } from "../server/api.js";
 import { serveApi } from "../server/http.js";
 

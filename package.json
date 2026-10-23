@@ -7,8 +7,8 @@
   "scripts": {
     "dev": "vite",
     "dev:desk": "vite --config vite.desk.config.js",
-    "build": "vite build",
-    "build:desk": "vite build --config vite.desk.config.js",
+    "build": "node --require ./security/node-trust-guard.cjs ./node_modules/vite/bin/vite.js build",
+    "build:desk": "node --require ./security/node-trust-guard.cjs ./node_modules/vite/bin/vite.js build --config vite.desk.config.js",
     "lint": "eslint .",
     "test": "node --test shared/*.test.js server/*.test.js",
     "preview": "vite preview"
@@ -35,5 +35,8 @@
     "globals": "^16.5.0",
     "typescript": "^6.0.3",
     "vite": "^7.2.4"
+  },
+  "engines": {
+    "node": "24.x"
   }
 }
